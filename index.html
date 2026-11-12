@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目预算管理工作台</title>
+<style>
+:root{
+  --bg:#f3f5f9; --panel:#ffffff; --border:#e4e8f0; --text:#1f2937; --muted:#6b7280;
+  --primary:#2563eb; --primary-dark:#1e46b8; --primary-light:#eaf0fe;
+  --green:#16a34a; --orange:#ea8a00; --red:#dc2626; --purple:#7c3aed;
+  --shadow:0 1px 3px rgba(16,24,40,.08),0 4px 14px rgba(16,24,40,.06);
+  --radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:"Microsoft YaHei","PingFang SC",-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:14px}
+.hidden{display:none!important}
+
+/* ---------- 登录页 ---------- */
+#loginView{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 55%,#3b82f6 100%);padding:20px}
+.login-card{background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:400px;max-width:100%;padding:36px 34px}
+.login-logo{text-align:center;margin-bottom:6px}
+.login-logo .lg{width:52px;height:52px;border-radius:12px;background:var(--primary);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:26px}
+.login-card h1{font-size:20px;text-align:center;margin:10px 0 4px}
+.login-card .sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:24px}
+.fld{margin-bottom:14px}
+.fld label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+.fld input,.fld select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;outline:none;transition:border .15s}
+.fld input:focus,.fld select:focus{border-color:var(--primary)}
+.btn{border:none;border-radius:8px;padding:10px 18px;font-size:14px;transition:.15s}
+.btn-primary{background:var(--primary);color:#fff;width:100%;padding:12px;font-size:15px}
+.btn-primary:hover{background:var(--primary-dark)}
+.login-err{color:var(--red);font-size:13px;min-height:18px;margin:4px 0 8px;text-align:center}
+.demo-tip{background:#f6f8fc;border:1px dashed #c9d6ef;border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);line-height:1.7}
+.demo-tip b{color:var(--text)}
+
+/* ---------- 布局 ---------- */
+#appView{display:flex;height:100vh;overflow:hidden}
+#sidebar{width:220px;background:#1c2b4a;color:#cdd7ea;display:flex;flex-direction:column;flex-shrink:0}
+.side-logo{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.side-logo .t{font-size:15px;font-weight:bold;color:#fff}
+.side-logo .s{font-size:11px;color:#8fa0c0;margin-top:3px}
+.side-logo .ver{display:inline-block;margin-top:6px;font-size:10px;color:#9fb0cc;background:rgba(255,255,255,.08);border-radius:20px;padding:1px 8px;letter-spacing:.3px}
+.nav{flex:1;padding:10px 0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:12px 18px;cursor:pointer;color:#cdd7ea;font-size:14px;border-left:3px solid transparent;transition:.15s}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav-item.active{background:rgba(37,99,235,.25);border-left-color:#60a5fa;color:#fff;font-weight:bold}
+.nav-item .ico{width:18px;text-align:center}
+.side-bottom{border-top:1px solid rgba(255,255,255,.08);padding:10px}
+.side-bottom .nav-item{padding:9px 18px;font-size:13px}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+#topbar{height:56px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
+#burger{display:none;background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:16px}
+.user-chip{display:flex;align-items:center;gap:10px}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:bold}
+.user-meta .un{font-weight:bold;font-size:14px;line-height:1.2}
+.role-tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:20px;line-height:18px}
+.role-admin{background:#fde8e8;color:#b91c1c}
+.role-pm{background:#e8effd;color:#1d4ed8}
+.role-member{background:#e5f6ec;color:#15803d}
+.role-finance{background:#fef3c7;color:#b45309}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px}
+.link-btn{background:none;border:none;color:var(--primary);font-size:13px}
+.link-btn:hover{text-decoration:underline}
+#content{flex:1;overflow-y:auto;padding:20px 24px}
+
+/* ---------- 通用卡片/表格 ---------- */
+.card{background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:18px}
+.card h3{font-size:15px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card h3 .bar{width:4px;height:16px;background:var(--primary);border-radius:2px;display:inline-block}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{background:#f6f8fc;color:#475569;text-align:left;padding:9px 10px;border-bottom:1px solid var(--border);white-space:nowrap;font-weight:600}
+.tbl td{padding:9px 10px;border-bottom:1px solid #eef1f6;vertical-align:middle}
+.tbl tr:hover td{background:#fafbff}
+/* 人员维度汇总表（驾驶舱） */
+.tbl.mini th,.tbl.mini td{padding:6px 8px;font-size:12px}
+.tbl.mini tfoot td{background:#f8fafc;color:#334155;font-weight:bold;border-top:1px solid var(--border)}
+.sum-tip{font-size:12px;color:var(--muted);margin:0 0 10px}
+.dist{min-width:260px}
+.dbar{display:flex;height:8px;border-radius:6px;overflow:hidden;background:#eef1f6}
+.dbar i{display:block;height:100%}
+.dtags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.dtag{font-size:11px;padding:1px 7px;border-radius:10px;background:#f6f8fc;color:#475569;white-space:nowrap}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.code-link{color:var(--primary);font-weight:bold;cursor:pointer;text-decoration:none;white-space:nowrap}
+.code-link:hover{text-decoration:underline}
+/* 项目编号等编号类列不换行，避免"2024-01"被折成两行 */
+.tbl td:first-child,.tbl th:first-child{white-space:nowrap}
+.stage-badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:12px;white-space:nowrap}
+.st-商机{background:#fef3e2;color:#b45309}.st-投标{background:#ede9fe;color:#6d28d9}
+.st-售前{background:#e0f2fe;color:#0369a1}.st-合同{background:#fce7f3;color:#be185d}
+.st-交付{background:#e8effd;color:#1d4ed8}.st-已验收{background:#e5f6ec;color:#15803d}
+.st-运维{background:#f1f5f9;color:#475569}
+.prog{height:6px;background:#e8ecf3;border-radius:4px;min-width:70px;overflow:hidden}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,#3b82f6,#2563eb);border-radius:4px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.toolbar input,.toolbar select{padding:8px 12px;border:1px solid var(--border);border-radius:8px;outline:none}
+.toolbar input:focus,.toolbar select:focus{border-color:var(--primary)}
+.btn-sm{padding:7px 14px;font-size:13px;border-radius:8px;border:none}
+.btn-main{background:var(--primary);color:#fff}
+.btn-main:hover{background:var(--primary-dark)}
+.btn-ghost{background:#fff;border:1px solid var(--border);color:var(--text)}
+.btn-danger{background:#fde8e8;color:#b91c1c}
+.empty-tip{text-align:center;color:var(--muted);padding:40px 0}
+
+/* ---------- 驾驶舱 ---------- */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.kpi{background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;position:relative;overflow:hidden}
+.kpi .k-label{font-size:13px;color:var(--muted)}
+.kpi .k-val{font-size:24px;font-weight:bold;margin-top:6px;font-variant-numeric:tabular-nums}
+.kpi .k-sub{font-size:12px;color:var(--muted);margin-top:4px}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+.kpi.k1::before{background:#2563eb}.kpi.k1 .k-val{color:#2563eb}
+.kpi.k2::before{background:#16a34a}.kpi.k2 .k-val{color:#16a34a}
+.kpi.k3::before{background:#ea8a00}.kpi.k3 .k-val{color:#ea8a00}
+.kpi.k4::before{background:#7c3aed}.kpi.k4 .k-val{color:#7c3aed}
+.kpi.k5::before{background:#0891b2}.kpi.k5 .k-val{color:#0891b2}
+.kpi .k-sub{line-height:1.5}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.chart-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;cursor:pointer;border-radius:8px;padding:2px 4px;transition:background .15s}
+.chart-row:hover{background:var(--primary-light)}
+.chart-row .cl{width:58px;font-size:13px;color:var(--muted);flex-shrink:0;text-align:center}
+.chart-row .cw{flex:1;height:18px;background:#eef1f6;border-radius:5px;overflow:hidden}
+.chart-row .cw i{display:block;height:100%;border-radius:5px}
+.chart-row .cv{width:110px;font-size:12px;color:var(--text);flex-shrink:0;font-variant-numeric:tabular-nums}
+.plist .prow{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px dashed #eef1f6}
+.plist .prow:last-child{border-bottom:none}
+.plist .pname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;cursor:pointer}
+.plist .pname:hover{color:var(--primary)}
+.plist .pstage{flex-shrink:0}
+.plist .pprog{width:130px;flex-shrink:0;display:flex;align-items:center;gap:8px}
+.plist .pprog .pct{font-size:12px;color:var(--muted);width:36px;text-align:right}
+/* 项目更新进度：更新时间徽标 + 项目经理 */
+.plist .pupd{font-size:11px;font-weight:600;padding:1px 8px;border-radius:10px;white-space:nowrap;flex-shrink:0}
+.plist .pupd.ok{background:#e5f6ec;color:#15803d}
+.plist .pupd.warn{background:#fef3c7;color:#b45309}
+.plist .pupd.late{background:#fde8e8;color:#b91c1c}
+.plist .pupd.none{background:#eef1f6;color:#64748b}
+/* 项目页顶部"上次更新"徽标 */
+.upd-chip{font-size:12px;padding:2px 9px;border-radius:20px;background:#eef1f6;color:#64748b;white-space:nowrap}
+.upd-chip.ok{background:#e5f6ec;color:#15803d}
+.upd-chip.warn{background:#fef3c7;color:#b45309}
+.upd-chip.late{background:#fde8e8;color:#b91c1c}
+.plist .pmtag{font-size:12px;color:var(--muted);width:58px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+
+/* ---------- 项目页 ---------- */
+.crumb{font-size:13px;color:var(--muted);margin-bottom:12px;cursor:pointer}
+.crumb:hover{color:var(--primary)}
+.pj-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+.pj-head .code{font-size:20px;font-weight:bold;color:var(--primary)}
+.demo-badge{background:#fef3e2;color:#b45309;font-size:12px;padding:2px 10px;border-radius:20px}
+.form-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.fitem label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+.fitem input,.fitem select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;outline:none;background:#fff}
+.fitem input:disabled,.fitem select:disabled{background:#f4f6fa;color:#94a3b8}
+.fitem input:focus,.fitem select:focus{border-color:var(--primary)}
+.fitem input.paid-input{-moz-appearance:textfield;appearance:textfield;text-align:right;font-variant-numeric:tabular-nums}
+.fitem input.paid-input::-webkit-outer-spin-button,
+.fitem input.paid-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ts-wrap{overflow-x:auto}
+.ts{border-collapse:collapse;font-size:12px;min-width:1000px;width:100%}
+.ts th,.ts td{border:1px solid var(--border);padding:5px 6px;text-align:center;white-space:nowrap}
+.ts th{background:#f6f8fc;font-weight:600}
+.ts .grp{background:#eaf0fe;color:#1d4ed8;font-weight:bold}
+.ts .sticky-l{position:sticky;left:0;background:#f6f8fc;z-index:2;min-width:70px;text-align:left}
+.ts input{width:44px;padding:4px;border:1px solid #d6dce6;border-radius:5px;text-align:center;outline:none}
+.ts input:focus{border-color:var(--primary)}
+.ts input:disabled{background:#f4f6fa;color:#94a3b8;border-color:#e4e8f0}
+.ts input.cost-cell{width:64px;text-align:right;padding:4px 6px}
+.ts input.cost-cell::placeholder{color:#cbd5e1;text-align:right}
+/* 成本项单元格只做手工填写，不再显示数字增减（步进）按钮 */
+.ts input.cost-cell::-webkit-outer-spin-button,
+.ts input.cost-cell::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ts input.cost-cell{-moz-appearance:textfield;appearance:textfield}
+.ts th.wk-th{font-size:11px;white-space:nowrap;font-weight:600;color:#475569}
+.ts .phase-cell select{padding:3px;font-size:11px;border:1px solid #d6dce6;border-radius:5px}
+.ts .sum{background:#f8fafc;font-weight:bold;font-variant-numeric:tabular-nums}
+.ts tfoot td,.ts .sumrow{background:#f8fafc;font-weight:bold}
+.calc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.calc-item{background:#f6f8fc;border-radius:10px;padding:12px 14px}
+.calc-item .cl{font-size:12px;color:var(--muted)}
+.calc-item .cv{font-size:17px;font-weight:bold;margin-top:5px;font-variant-numeric:tabular-nums}
+.calc-item.hl{background:var(--primary-light)}
+.calc-item.hl .cv{color:var(--primary)}
+.alert-neg{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:12px;line-height:1.5}
+.save-bar{display:flex;justify-content:flex-end;gap:10px;margin-top:6px}
+.pj-topbar{display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap}
+.pj-topbar .crumb{margin:0}
+.io-bar{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.io-bar .io-tip{font-size:12px;color:var(--muted);margin-right:auto}
+.fin-tip{background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:9px 12px;border-radius:8px;font-size:12.5px;line-height:1.6;margin-bottom:10px}
+.fin-tip b{color:#b45309}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.section-head h3{margin:0}
+
+/* ---------- 用户管理 ---------- */
+.role-sel{padding:6px 8px;border:1px solid var(--border);border-radius:6px}
+
+/* ---------- 弹窗/提示 ---------- */
+#modalRoot .mask{position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal{background:#fff;border-radius:14px;width:480px;max-width:100%;max-height:90vh;overflow-y:auto;padding:22px 24px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal h3{margin-bottom:16px;font-size:16px}
+.modal .acts{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+#toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;align-items:center}
+.toast-item{background:#1f2937;color:#fff;padding:10px 20px;border-radius:24px;font-size:13px;box-shadow:0 6px 20px rgba(0,0,0,.25);animation:tin .25s}
+@keyframes tin{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+
+/* ---------- 移动端 ---------- */
+@media (max-width:1024px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .charts{grid-template-columns:1fr}
+  .form-grid,.calc-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:768px){
+  #burger{display:block}
+  #sidebar{position:fixed;left:0;top:0;bottom:0;z-index:50;transform:translateX(-100%);transition:transform .2s;box-shadow:4px 0 20px rgba(0,0,0,.2)}
+  #sidebar.open{transform:none}
+  #sideMask{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:40}
+  #content{padding:14px}
+  .kpis{grid-template-columns:1fr 1fr;gap:10px}
+  .kpi .k-val{font-size:19px}
+  .topbar-right .date-txt{display:none}
+  .form-grid,.calc-grid{grid-template-columns:1fr}
+  .tbl{font-size:12px}
+  .tbl th,.tbl td{padding:7px 6px}
+}
+</style>
+</head>
+<body>
+
+<!-- ================= 登录页 ================= -->
+<div id="loginView">
+  <div class="login-card">
+    <div class="login-logo"><span class="lg">📊</span></div>
+    <h1>项目预算管理工作台</h1>
+    <div class="sub">请使用您的账号登录（与钉钉姓名一致）</div>
+    <div class="fld"><label>手机号</label><input id="loginUser" placeholder="请输入11位手机号" maxlength="11" inputmode="numeric" autocomplete="username"></div>
+    <div class="fld"><label>密码（手机号后6位）</label><input id="loginPwd" type="password" placeholder="请输入手机号后6位" maxlength="6" inputmode="numeric" autocomplete="current-password"></div>
+    <div class="login-err" id="loginErr"></div>
+    <button class="btn btn-primary" id="loginBtn">登录 / 注册</button>
+    <div style="height:16px"></div>
+    <div class="demo-tip">
+      <b>注册规则：</b>任意手机号即可注册登录，密码为该手机号<b>后 6 位</b>，首次登录自动注册为「项目成员」角色；角色由管理员在"用户管理"中调整。
+      管理员请使用 <b>admin / admin123</b> 登录。
+    </div>
+    <div style="text-align:center;font-size:11px;color:#94a3b8;margin-top:14px" id="loginVer"></div>
+  </div>
+</div>
+
+<!-- ================= 应用 ================= -->
+<div id="appView" class="hidden">
+  <aside id="sidebar">
+    <div class="side-logo"><div class="t">📊 项目预算管理工作台</div><div class="s">Project Budget Workspace</div><div class="ver" id="appVer"></div></div>
+    <div class="nav" id="navBox"></div>
+    <div class="side-bottom" id="sideBottom"></div>
+  </aside>
+  <div class="main">
+    <header id="topbar">
+      <button id="burger">☰</button>
+      <div class="user-chip" id="userChip"></div>
+      <div class="topbar-right"><span class="date-txt" id="dateTxt"></span><button class="link-btn" id="pwdBtn">修改密码</button></div>
+    </header>
+    <main id="content"></main>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="modalRoot"></div>
+<input type="file" id="importFile" accept=".json" class="hidden">
+
+<script>
+"use strict";
+/* =====================================================
+   项目预算管理工作台（单文件 / 零依赖 / localStorage）
+   角色：admin 管理员 | pm 项目经理 | member 项目成员 | finance 财务复核（成本项订正）
+===================================================== */
+var APP_VERSION = "1.0.0";   /* 版本号：发布新版本时同步修改 VERSION 文件与本处 */
+var STAGES = ["商机","投标","售前","合同","交付","已验收","运维"];
+var STAGE_PROG = {"商机":10,"投标":25,"售前":40,"合同":55,"交付":75,"已验收":90,"运维":100};
+var ROLE_NAME = {admin:"管理员", pm:"项目经理", member:"项目成员", finance:"财务复核"};
+/* 角色权责一览（用户管理页说明 + 项目页提示复用） */
+var ROLE_PERM = {
+  admin:"全部权限：所有项目查看/编辑、用户管理、基础数据、驾驶舱全公司数据",
+  pm:"本人作为项目经理的项目：表格填写与查看、驾驶舱本项目数据",
+  member:"本人参与的项目：仅可填写自己的工时",
+  finance:"全部项目的成本项复核：可查看所有项目、订正各周成本项，其余内容只读"
+};
+var LS = {users:"pb_users_v2", projects:"pb_projects_v1", rates:"pb_rates_v2", session:"pb_session_v1"};
+
+/* ---------- 基础数据：人员工资与人天成本（来源：《人员工资与人天成本表》） ---------- */
+/* 公式：社保公积金 = 工资 × 0.249 + 120；人天成本 = (工资 + 社保公积金) ÷ 21.75 ÷ 0.85 */
+var SALARY_SEED = [
+  {level:"P1", name:"赵六", salary:6000},
+  {level:"P2", name:"王二", salary:7000},
+  {level:"P3", name:"张三", salary:8000},
+  {level:"P4", name:"李四", salary:9000}
+];
+/* 姓名必填：旧数据或空值按职级给一个默认名，避免出现空的人员名称 */
+var RATE_NAME_FALLBACK = {P1:"赵六", P2:"王二", P3:"张三", P4:"李四"};
+function socOf(r){ return Number(r.salary||0)*0.249+120; }
+function costOfRow(r){ var s=Number(r.salary||0); return s? (s+socOf(r))/21.75/0.85 : 0; }
+
+/* ---------- 用户种子（手机号注册，管理员内置） ---------- */
+var USERS_SEED = [
+  {u:"admin", name:"系统管理员", role:"admin", pwd:"admin123"}
+];
+
+/* ---------- 项目种子（导入自钉钉表格《项目预算管理表》- 目录页） ---------- */
+var _dir = [
+ ["2024","系统连续性风险整改项目-阳关e连存储设备软硬件产品买卖合同","光大理财有限责任公司","栗栗","已验收","栗栗","316236.51"],
+ ["2025","投控集团智慧协同办公平台项目","山东港云数字科技有限公司","原野","运维","","604000"],
+ ["2025","青岛西大技工学校数字化校园建设项目","青岛未来域信息科技有限公司","/","已验收","/","22000"],
+ ["2026","专属化钉钉 （海陆通） 服务合同","海陆建设（青岛）有限公司","栗栗","运维","栗栗","580000"],
+ ["2026","接待一体化流程管理平台","青岛聚远网络科技有限公司","/","已验收","/","193000"],
+ ["2026","TB私有化交付","济南邦德激光股份有限公司","原野","交付","","474432"],
+ ["2026","全量、全平台、全链路订单池平台项目","山东鲁花集团股份有限公司","原野","运维","","1920000"],
+ ["2026","图书管理系统开发","山东黄金矿业股份有限公司新城金矿","张嘉宾","交付","","74500"],
+ ["2026","零信任安全管控升级移动端网关","山东港口科技集团有限公司","原野","合同","","882000"],
+ ["2026","山东港口投控集团\u201c三基\u201d管理平台建设","山东港云数字科技有限公司","张倩","交付","","1,183,200.00"],
+ ["2026","投控集团人工智能服务平台二期建设项且","山东港云数字科技有限公司","张倩","交付","","559919.4"],
+ ["2026","投控集团数字安全管理平台迭代升级建设项目","山东港云数字科技有限公司","刘瑞隆","交付","","100500"],
+ ["2026","北港大数据智能巡检系统建设项目采购合同","广西北港大数据科技有限公司","刘瑞隆","交付","","98000"],
+ ["2026","移动沟通平台采购合同","青岛新力通工业有限责任公司","栗栗","交付","栗栗","520000"],
+ ["2026","AI 智能开发平台及相关服务采购合同","青岛新力通工业有限责任公司","栗栗","交付","栗栗","530000"],
+ ["2026","青岛九和信息科技有限公司协同管理平台","青岛九和信息技术有限公司","栗栗","运维","栗栗","348810"],
+ ["2025","专属钉钉2024 年度续费项且","青岛双瑞海洋环境工程股份有限公司","栗栗","已验收","栗栗","211908"],
+ ["2026","青岛开放大学会议室升级改造项目","中国联合网络通信有限公司青岛市分公司","刘瑞隆","已验收","","197440"],
+ ["2026","中国联通考勤设备项目","中国联合网络通信有限公司青岛市分公司","刘瑞隆","已验收","","250000"],
+ ["2026","青岛联通市南分公司理系统","中国联合网络通信有限公司青岛市分公司","刘瑞隆","已验收","","273800"],
+ ["2026","工单管理&台账管理系统委托研发项目合同","东软集团股份有限公司","姜姗姗","运维","","200000"],
+ ["2026","青岛九和信息科技有限公司协同管理平台","青岛九和信息技术有限公司","栗栗","运维","栗栗","217900"],
+ ["2026","技术开发（委托合同）-专属钉钉项目","特来电新能源股份有限公司","栗栗","运维","栗栗","380000"],
+ ["2026","分析航线信息项目合同","青岛一凌网集成有限公司","/","已验收","/","276000"],
+ ["2026","专属钉钉2025 年度续费项且","青岛双瑞海洋环境工程股份有限公司","栗栗","运维","栗栗","193000"],
+ ["2026","光大理财阳光e连系统集成合同","光大理财有限责任公司","栗栗","已验收","栗栗","809489.52"],
+ ["2026","专属化钉钉（海陆通）服务合同","海陆建设（青岛）有限公司","栗栗","运维","栗栗","424000"],
+ ["2026","南京地铁1号线通信信号系统","南京熊猫信息产业有限公司","原野","运维","","3870000"],
+ ["2026","中加特专属钉钉 2026 年续费项目","青岛中加特电气股份有限公司","栗栗","运维","栗栗","363000"],
+ ["2026","专属钉钉采购合同","山东奥扬新能源科技股份有限公司","张倩","已验收","","195000"],
+ ["2026","太原轨道交通一号线 2025-2027 年信息化系统/安全管理系统建设项目钉钉宜搭、采购和合同模块与服务器托管及钉钉AI模型服务合同","南京睿行数智地铁有限公司","原野","交付","","828000"],
+ ["2026","人工智能应用平台及系统集成服务","山东初华数字科技有限公司","原野","售前","","1471411.2"],
+ ["2026","集装箱自动化码头多场景AI智能体研究项目","日照港集装箱发展有限公司集装箱分公司","刘瑞隆","售前","","1450000"],
+ ["2026","宁波港北二集视频识别安全隐患","宁波舟山港股份有限公司北仑第二集装箱码头分公司","原野","售前","","455000"],
+ ["2026","廉洁风控智能体集群","青岛地铁集团有限公司","邓钰彩","售前","","1100000"],
+ ["2026","舆情分析平台","中国联合航空公司","原野","售前","","250000"],
+ ["2026","山东港口科技集团钉钉存储采购项目","山东港口科技集团有限公司","原野","合同","","640000"],
+ ["2026","视频识别安全隐患","上海环境卫生工程设计院有限公司","原野","售前","","870000"],
+ ["2026","翻译助手","青岛市海洋研究所","原野","售前","","94000"],
+ ["2026","企业级知识中台","劲牌有限公司","原野","交付","","570000"],
+ ["2026","资源统筹智能大脑","中集青岛冷藏产业基地","原野","售前","","200000"],
+ ["2026","杭州信息科技有限公司智能体一体化开发平台建设项目","杭州信息科技有限公司","原野","投标","","855000"],
+ ["2026","专属钉钉续费项目","青岛双瑞海洋环境工程股份有限公司","栗栗","投标","栗栗","190000"],
+ ["2026","AI办公平台采购项目","青岛双瑞海洋环境工程股份有限公司","栗栗","投标","栗栗","99000"],
+ ["2026","智能化会议预定系统优化升级项目","青岛双瑞海洋环境工程股份有限公司","栗栗","商机","栗栗","99000"]
+];
+function parseAmt(s){ if(!s) return 0; var n=parseFloat(String(s).replace(/,/g,"")); return isNaN(n)?0:n; }
+function buildProjectsSeed(){
+  var cnt={}, arr=[];
+  _dir.forEach(function(r,i){
+    var y=r[0]||"0000"; cnt[y]=(cnt[y]||0)+1;
+    var code=y+"-"+String(cnt[y]).padStart(2,"0");
+    arr.push({code:code, year:y, name:r[1], customer:r[2], biz:r[3], stage:r[4]||"商机", pm:r[5], amount:parseAmt(r[6]),
+      paidAmount:0, members:[], ts:null, isDemo:false});
+  });
+  return arr;
+}
+/* 示例工时数据（来自《项目预算管理表》模板页，标注为示例数据） */
+function demoTs(amount){
+  var z=[5,5,5,5,5,5,5,5,5,0,0,0], l=[5,4,5,5,5,5,3,0,0,0,0,0], w=[5,0,0,0,5,4,5,5,5,5,5,5];
+  var ph=["","","","一阶段","","","","二阶段","","","","三阶段"];
+  return {signAmount:amount,
+    dates:["","","","","","","","","","","",""],
+    rows:[{name:"张三",level:"P3",hours:z.slice()},{name:"李四",level:"P4",hours:l.slice()},{name:"王二",level:"P2",hours:w.slice()}],
+    phases:ph.slice(),
+    costs:{住宿:[0,0,0,0,0,0,0,0,0,0,0,0],差旅:[0.03,0,0,0,0,0,0,0,0,0,0,0],补贴:[0,0,0,0,0,0,0,0,0,0,0,0],风险金:[0,0,0,0,0,0,0,0,0,0,0,0]}};
+}
+
+/* ---------- 存储 ---------- */
+function load(key, seed){ try{ var v=localStorage.getItem(key); return v?JSON.parse(v):seed; }catch(e){ return seed; } }
+function save(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+var users, projects, rates;
+/* ---------- 内置授权：以下手机号自动获得管理员（全部权限） ---------- */
+var GRANT_ADMINS = ["15563955737"];
+
+function initStore(){
+  users = load(LS.users, null);
+  if(!users){ users = JSON.parse(JSON.stringify(USERS_SEED)); save(LS.users, users); }
+  rates = load(LS.rates, null);
+  if(!rates){ rates = JSON.parse(JSON.stringify(SALARY_SEED)); save(LS.rates, rates); }
+  ensureRateNames();   /* 人员名称必填：历史空名自动补一个默认名 */
+  projects = load(LS.projects, null);
+  if(!projects){
+    projects = buildProjectsSeed();
+    var demo = projects.filter(function(p){return p.code==="2024-01";})[0];
+    if(demo){ demo.ts = demoTs(demo.amount); demo.isDemo = true; demo.members=["张三","李四","王二"]; demo.updatedAt = Date.now()-2*86400000; }
+    save(LS.projects, projects);
+  }
+  /* 确保授权手机号存在且为管理员（已注册用户自动升级角色） */
+  var changed=false;
+  GRANT_ADMINS.forEach(function(ph){
+    var u2=null;
+    for(var i=0;i<users.length;i++) if(users[i].u===ph){ u2=users[i]; break; }
+    if(!u2){ users.push({u:ph, name:ph, role:"admin", pwd:ph.slice(-6)}); changed=true; }
+    else if(u2.role!=="admin"){ u2.role="admin"; changed=true; }
+  });
+  if(changed) save(LS.users, users);
+  /* 成本项单位统一为元（旧数据以万元存储，首次加载时自动换算并落盘） */
+  var conv=false;
+  (projects||[]).forEach(function(p){
+    if(p.ts && p.ts.costUnit!=="yuan"){ normalizeCosts(p.ts); conv=true; }
+    else if(p.ts) normalizeCosts(p.ts);
+  });
+  if(conv) save(LS.projects, projects);
+}
+function rateOf(level){
+  for(var i=0;i<rates.length;i++) if(rates[i].level===level) return Math.round(costOfRow(rates[i])*100)/100;
+  return 0;
+}
+/* 姓名 → 基础数据行（人员名称必填且唯一，作为选择人员的依据） */
+function rateRowOfPerson(name){
+  var n=String(name==null?"":name).trim().toLowerCase();
+  if(!n) return null;
+  for(var i=0;i<rates.length;i++){
+    if(String(rates[i].name||"").trim().toLowerCase()===n) return rates[i];
+  }
+  return null;
+}
+/* 按姓名取职级（找不到返回空串，调用方回退到旧值） */
+function levelOfPerson(name){
+  var r=rateRowOfPerson(name);
+  return r? String(r.level||"") : "";
+}
+/* 按姓名取人天成本（找不到返回 0） */
+function personRate(name){
+  var r=rateRowOfPerson(name);
+  return r? Math.round(costOfRow(r)*100)/100 : 0;
+}
+/* 补齐历史数据里为空的人员名称（同一姓名不可重复） */
+function ensureRateNames(){
+  if(!rates || !rates.length) return;
+  var used={}, changed=false;
+  rates.forEach(function(r){ var n=String(r.name||"").trim(); if(n) used[n.toLowerCase()]=1; });
+  rates.forEach(function(r,i){
+    if(String(r.name||"").trim()) return;
+    var base=RATE_NAME_FALLBACK[r.level] || ("待补充"+(i+1));
+    var nm=base, k=1;
+    while(used[nm.toLowerCase()]){ k++; nm=base+k; }
+    r.name=nm; used[nm.toLowerCase()]=1; changed=true;
+  });
+  if(changed) save(LS.rates, rates);
+}
+/* 新增人员行时生成不重复的默认名（可再改名） */
+function nextPersonName(){
+  var i=1;
+  while(rateRowOfPerson("新人员"+i)) i++;
+  return "新人员"+i;
+}
+
+/* ---------- 会话与权限 ---------- */
+var session = null;
+function login(u,p){
+  u=u.trim();
+  if(/^1\d{10}$/.test(u)){
+    /* 手机号登录/注册：密码=手机号后6位，首次登录自动注册为项目成员 */
+    if(p!==u.slice(-6)) return false;
+    var exist=null;
+    for(var i=0;i<users.length;i++) if(users[i].u===u){ exist=users[i]; break; }
+    if(!exist){
+      exist={u:u, name:u, role:"member", pwd:u.slice(-6)};
+      users.push(exist); save(LS.users,users);
+    }
+    session={u:exist.u, name:exist.name, role:exist.role};
+    save(LS.session,session);
+    return true;
+  }
+  for(var j=0;j<users.length;j++){
+    if(users[j].u===u && users[j].pwd===p){ session={u:users[j].u,name:users[j].name,role:users[j].role}; save(LS.session,session); return true; }
+  }
+  return false;
+}
+function logout(){ session=null; localStorage.removeItem(LS.session); showLogin(); }
+function restore(){ var s=load(LS.session,null); if(s){ for(var i=0;i<users.length;i++){ if(users[i].u===s.u && users[i].pwd===s.pwd||users[i].u===s.u){ session={u:users[i].u,name:users[i].name,role:users[i].role,pwd:users[i].pwd}; return true; } } } return false; }
+function isAdmin(){ return session.role==="admin"; }
+function isPM(){ return session.role==="pm"; }
+function isFinance(){ return session.role==="finance"; }
+/* 可见项目 */
+function visibleProjects(){
+  if(isAdmin()||isFinance()) return projects;  /* 财务复核需审视全部项目的成本项 */
+  if(isPM()) return projects.filter(function(p){return p.pm===session.name;});
+  return projects.filter(function(p){
+    return (p.members||[]).indexOf(session.name)>=0 ||
+      (p.ts&&p.ts.rows||[]).some(function(r){return r.name===session.name;});
+  });
+}
+function findProject(code){ for(var i=0;i<projects.length;i++) if(projects[i].code===code) return projects[i]; return null; }
+/* 项目编辑权：信息/工时(任意行)/成本 */
+function canEditProject(p){
+  if(isAdmin()) return true;
+  if(isPM()) return p.pm===session.name;
+  return false;
+}
+/* 成员在项目内可编辑自己的工时行 */
+function canEditOwnRow(p){ return session.role==="member" && memberIn(p, session.name); }
+/* 成本项编辑权：管理员/项目经理(本人项目) + 财务复核（全部项目） */
+function canEditCost(p){ return canEditProject(p) || isFinance(); }
+function memberIn(p,name){
+  return (p.members||[]).indexOf(name)>=0 || ((p.ts&&p.ts.rows)||[]).some(function(r){return r.name===name;});
+}
+
+/* ---------- 工具 ---------- */
+function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function fmtWan(n){ return (n/10000).toLocaleString("zh-CN",{maximumFractionDigits:2}); }
+function fmtN(n,d){ return Number(n||0).toLocaleString("zh-CN",{maximumFractionDigits:d==null?2:d}); }
+
+/* ---------- CSV 模板导入 / 导出 ---------- */
+/* 预计开发时长（月，0.5 步进）→ 周数（每月按 4 周计） */
+var MONTH_CN=["第一个月","第二个月","第三个月","第四个月","第五个月","第六个月",
+              "第七个月","第八个月","第九个月","第十个月","第十一个月","第十二个月"];
+function weekCount(ts){
+  var m=Number(ts&&ts.devMonths);
+  if(!m || m<=0) m=3;
+  var w=Math.round(m*4);
+  if(w<2) w=2;
+  if(w>48) w=48;
+  return w;
+}
+/* 按预计开发时长对齐各周数组长度（多截少补，不破坏已有数据） */
+function normalizeWeeks(ts){
+  if(!ts) return;
+  var W=weekCount(ts);
+  ts.devMonths=W/4;
+  function fit(arr, fill){
+    var a=(arr||[]).slice(0,W);
+    while(a.length<W) a.push(fill);
+    return a;
+  }
+  ts.flags=fit(ts.flags,"");
+  ts.dates=fit(ts.dates,"");
+  ts.phases=fit(ts.phases,"");
+  (ts.rows||[]).forEach(function(r){ r.hours=fit(r.hours,0); });
+  if(ts.costs){ ["住宿","差旅","补贴","风险金"].forEach(function(c){ ts.costs[c]=fit(ts.costs[c],0); }); }
+  return W;
+}
+/* 周列标签（与页面表头一致，如 W1(11/12-11/18)） */
+function weekLabelList(ts){
+  var W=weekCount(ts);
+  var sch=scheduleWeeks(ts&&ts.startDate, W), out=[];
+  for(var i=0;i<W;i++){
+    var wl="W"+(i%4+1);
+    if(sch) wl+="("+fmtMD(sch[i].s)+"-"+fmtMD(sch[i].e)+")";
+    out.push(wl);
+  }
+  return out;
+}
+function csvCell(v){
+  var s=String(v==null?"":v);
+  return /[",\r\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+}
+function downloadCsv(filename, rows){
+  var txt=rows.map(function(r){ return r.map(csvCell).join(","); }).join("\r\n");
+  var blob=new Blob(["\uFEFF"+txt], {type:"text/csv;charset=utf-8"});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");
+  a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ try{ URL.revokeObjectURL(url); }catch(e){} if(a.remove) a.remove(); }, 800);
+}
+/* 简易 CSV 解析：支持双引号包裹、引号转义、CRLF */
+function parseCsvText(text){
+  var rows=[], row=[], cur="", q=false;
+  for(var i=0;i<text.length;i++){
+    var ch=text.charAt(i);
+    if(q){
+      if(ch==='"'){
+        if(text.charAt(i+1)==='"'){ cur+='"'; i++; } else q=false;
+      } else cur+=ch;
+    } else {
+      if(ch==='"') q=true;
+      else if(ch===",") { row.push(cur); cur=""; }
+      else if(ch==="\n"){ row.push(cur); rows.push(row); row=[]; cur=""; }
+      else if(ch==="\r"){ /* 忽略 */ }
+      else cur+=ch;
+    }
+  }
+  if(cur!=="" || row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(function(r){ return r.some(function(c){ return String(c).trim()!==""; }); });
+}
+/* 智能读取文件：优先 UTF-8，出现乱码则按 GBK 解码（兼容 Excel 另存的中文 CSV） */
+function readCsvFile(file, cb){
+  var fr=new FileReader();
+  fr.onload=function(){
+    var buf=fr.result, txt;
+    try{ txt=new TextDecoder("utf-8").decode(buf); }catch(e){ txt=String.fromCharCode.apply(null,new Uint8Array(buf)); }
+    if(txt.indexOf("\uFFFD")>=0){
+      try{ txt=new TextDecoder("gbk").decode(buf); }catch(e){}
+    }
+    cb(txt.replace(/^\uFEFF/,""));
+  };
+  fr.onerror=function(){ toast("文件读取失败，请重试"); };
+  fr.readAsArrayBuffer(file);
+}
+function numOf(v){ var n=Number(String(v==null?"":v).replace(/[^\d.\-]/g,"")); return isFinite(n)?n:0; }
+/* ---------- 项目更新时间（用于驾驶舱「项目更新进度」排序与提醒） ---------- */
+var UPD_WARN_DAYS = 7;   /* 超过 7 天未更新 → 黄色提醒 */
+var UPD_LATE_DAYS = 14;  /* 超过 14 天未更新 → 红色提醒 */
+function daysSinceUpdate(p){
+  if(!p || !p.updatedAt) return null;
+  var d=Math.floor((Date.now()-Number(p.updatedAt))/86400000);
+  return d<0? 0 : d;
+}
+function fmtAgo(d){
+  if(d==null) return "未记录更新";
+  if(d<=0) return "今天更新";
+  if(d===1) return "昨天更新";
+  return d+" 天前";
+}
+function markUpdated(p){ if(p) p.updatedAt=Date.now(); }
+/* 从项目开始时间自动排期：12 周 × 每周 5 个工作日（跨周末顺延） */
+function scheduleWeeks(startStr, weeks){
+  if(!startStr) return null;
+  var N=weeks||12;
+  var d=new Date(String(startStr)+"T00:00:00");
+  if(isNaN(d.getTime())) return null;
+  var out=[], cur=new Date(d.getTime());
+  for(var w=0;w<N;w++){
+    var first=null,last=null,cnt=0;
+    while(cnt<5){
+      var g=cur.getDay();
+      if(g!==0 && g!==6){ if(!first) first=new Date(cur.getTime()); last=new Date(cur.getTime()); cnt++; }
+      cur.setDate(cur.getDate()+1);
+    }
+    out.push({s:first,e:last});
+  }
+  return out;
+}
+function fmtMD(x){ return ("0"+(x.getMonth()+1)).slice(-2)+"/"+("0"+x.getDate()).slice(-2); }
+function toast(msg){ var t=document.getElementById("toast"); var d=document.createElement("div"); d.className="toast-item"; d.textContent=msg; t.appendChild(d); setTimeout(function(){d.remove();},2400); }
+function stageBadge(s){ return '<span class="stage-badge st-'+esc(s)+'">'+esc(s)+'</span>'; }
+
+/* ---------- 项目测算 ---------- */
+function rowSum(r){ return (r.hours||[]).reduce(function(a,b){return a+Number(b||0);},0); }
+/* 人天成本优先按「人员名称」从基础数据取，人员改职级后金额自动跟着变；找不到再回退旧职级 */
+function rowRate(r){ return personRate(r.name) || rateOf(r.level); }
+function rowAmount(r){ return rowSum(r)*rowRate(r); }
+function laborTotal(ts){ return (ts.rows||[]).reduce(function(a,r){return a+rowAmount(r);},0); }
+function costCatTotal(ts,cat){ return ((ts.costs||{})[cat]||[]).reduce(function(a,b){return a+Number(b||0);},0); }
+function otherCostYuan(ts){ return ["住宿","差旅","补贴","风险金"].reduce(function(a,c){return a+costCatTotal(ts,c);},0); }
+function totalCostYuan(ts){ return ts? laborTotal(ts) + otherCostYuan(ts) : 0; }
+/* 兼容以"万元"为单位的旧函数（驾驶舱等处沿用） */
+function otherCostWan(ts){ return otherCostYuan(ts)/10000; }
+function totalCostWan(ts){ return totalCostYuan(ts)/10000; }
+/* 成本项单位迁移：旧数据以万元存储，统一转换为元（只执行一次） */
+function normalizeCosts(ts){
+  if(!ts) return;
+  if(!ts.costs) ts.costs={住宿:[],差旅:[],补贴:[],风险金:[]};
+  var cats=["住宿","差旅","补贴","风险金"];
+  cats.forEach(function(c){ if(!ts.costs[c]) ts.costs[c]=[]; });
+  if(ts.costUnit!=="yuan"){
+    cats.forEach(function(c){
+      ts.costs[c]=(ts.costs[c]||[]).map(function(v){ return Math.round(Number(v||0)*10000*100)/100; });
+    });
+    ts.costUnit="yuan";
+  }
+  var W=weekCount(ts);
+  cats.forEach(function(c){ while(ts.costs[c].length<W) ts.costs[c].push(0); });
+}
+function grossProfit(ts){
+  if(!ts) return null;
+  var sa=Number(ts.signAmount||0);
+  if(!sa) return null;
+  return sa - totalCostYuan(ts);   /* 项目毛利 = 签单开发成本 − 实际开发成本 */
+}
+function grossMarginPct(ts){
+  var g=grossProfit(ts); if(g==null||!Number(ts.signAmount)) return null;
+  return g/Number(ts.signAmount)*100;
+}
+
+/* =====================================================
+   渲染
+===================================================== */
+var $=function(id){return document.getElementById(id);};
+var content, navBox;
+/* 脚本位于 body 末尾，DOM 已就绪，直接绑定引用 */
+content=document.getElementById("content");
+navBox=document.getElementById("navBox");
+
+function renderShell(){
+  $("loginView").classList.add("hidden");
+  $("appView").classList.remove("hidden");
+  if($("appVer")) $("appVer").textContent = "v"+APP_VERSION;
+  var r=ROLE_NAME[session.role];
+  $("userChip").innerHTML =
+    '<div class="avatar">'+esc(session.name.charAt(0))+'</div>'+
+    '<div class="user-meta"><div class="un">'+esc(session.name)+'</div>'+
+    '<span class="role-tag role-'+session.role+'">'+r+'</span></div>';
+  $("dateTxt").textContent = new Date().toLocaleDateString("zh-CN",{year:"numeric",month:"long",day:"numeric",weekday:"long"});
+  $("pwdBtn").style.display = /^1\d{10}$/.test(session.u) ? "none" : "";
+  var nav=[
+    {h:"#/dashboard", ico:"📈", t:"驾驶舱", key:"dashboard"},
+    {h:"#/projects",  ico:"📋", t:"项目目录", key:"projects"}
+  ];
+  if(isAdmin()){
+    nav.push({h:"#/users", ico:"👥", t:"用户管理", key:"users"});
+    nav.push({h:"#/rates", ico:"🧮", t:"基础数据", key:"rates"});
+  }
+  navBox.innerHTML = nav.map(function(n){return '<div class="nav-item" data-h="'+n.h+'"><span class="ico">'+n.ico+'</span>'+n.t+'</div>';}).join("");
+  Array.prototype.forEach.call(navBox.children,function(el){
+    el.onclick=function(){ location.hash=el.getAttribute("data-h"); closeSidebar(); };
+  });
+  var bottom='<div class="nav-item" id="expBtn"><span class="ico">⬇️</span>导出数据备份</div>';
+  if(isAdmin()) bottom+='<div class="nav-item" id="impBtn"><span class="ico">⬆️</span>导入数据备份</div>';
+  bottom+='<div class="nav-item" id="logoutBtn"><span class="ico">🚪</span>退出登录</div>';
+  $("sideBottom").innerHTML=bottom;
+  $("expBtn").onclick=exportData;
+  if($("impBtn")) $("impBtn").onclick=function(){$("importFile").click();};
+  $("logoutBtn").onclick=function(){ if(confirm("确定退出登录？")) logout(); };
+}
+function setActiveNav(key){
+  Array.prototype.forEach.call(navBox.children,function(el){
+    el.classList.toggle("active", el.getAttribute("data-h").indexOf(key)>=0);
+  });
+}
+
+/* ---------- 登录视图 ---------- */
+function showLogin(){
+  $("appView").classList.add("hidden");
+  $("loginView").classList.remove("hidden");
+  $("loginErr").textContent="";
+}
+function doLogin(){
+  var u=$("loginUser").value.trim(), p=$("loginPwd").value;
+  if(!u||!p){ $("loginErr").textContent="请输入账号和密码"; return; }
+  if(login(u,p)){ $("loginPwd").value=""; boot(); }
+  else if(/^1\d{10}$/.test(u)) $("loginErr").textContent="密码不正确：手机号登录密码为该手机号后 6 位";
+  else $("loginErr").textContent="账号或密码错误，请重新输入";
+}
+
+/* ---------- 路由 ---------- */
+var pendingStageFilter=null;
+function route(){
+  if(!session) return;
+  var h=location.hash||"#/dashboard";
+  var navKey="dashboard";
+  if(h.indexOf("#/project/")===0||h.indexOf("#/projects")===0) navKey="projects";
+  else if(h.indexOf("#/users")===0) navKey="users";
+  else if(h.indexOf("#/rates")===0) navKey="rates";
+  setActiveNav(navKey);
+  if(h.indexOf("#/project/")===0){
+    var code=decodeURIComponent(h.split("#/project/")[1]);
+    renderProjectPage(code);
+  } else if(h.indexOf("#/projects")===0){
+    renderProjects(pendingStageFilter); pendingStageFilter=null;
+  } else if(h.indexOf("#/users")===0 && isAdmin()){
+    renderUsers();
+  } else if(h.indexOf("#/rates")===0){
+    /* 基础数据仅管理员可见：非管理员访问会被 renderRates 内部重定向回驾驶舱 */
+    renderRates();
+  } else {
+    renderDashboard();
+  }
+}
+
+/* ---------- 驾驶舱 ---------- */
+function agg(list){
+  var total=0, byStage={}, amtStage={};
+  var signGp=0, signCost=0, signCnt=0;   /* 签单毛利 = Σ（合同额 − 签单开发成本） */
+  var cost=0, costCnt=0;                 /* 当前预估开发总成本 = Σ 人工 + 住宿/差旅/补贴/风险金 */
+  var gpEst=0, overGp=0, cmpCnt=0, sgpCmp=0;  /* 预估开发毛利 = 签单开发成本 − 预估开发成本；超毛利 = 签单毛利 − 预估开发毛利 */
+  STAGES.forEach(function(s){byStage[s]=0;amtStage[s]=0;});
+  list.forEach(function(p){
+    var a=Number(p.amount||0); total+=a;
+    byStage[p.stage]=(byStage[p.stage]||0)+1;
+    amtStage[p.stage]=(amtStage[p.stage]||0)+a;
+    var ts=p.ts;
+    /* 成本项统一为元后再累加 */
+    if(ts) normalizeCosts(ts);
+    var sc = ts? Number(ts.signAmount||0) : 0;
+    var c = ts? totalCostYuan(ts) : 0;
+    if(sc>0){
+      signCost+=sc; signCnt++;
+      var sgp = a - sc;              /* 签单毛利（合同额 − 签单开发成本） */
+      signGp += sgp;
+      /* 超毛利只在"签单成本 + 合同额 + 已录成本"都具备的项目上比较，避免未录成本的项目虚增毛利 */
+      if(c>0 && a>0){
+        var gp = sc - c;             /* 预估开发毛利（即项目页「项目毛利」） */
+        gpEst += gp;
+        overGp += sgp - gp;          /* 签单毛利 − 预估开发毛利 */
+        sgpCmp += sgp;               /* 仅可比项目的签单毛利，供副标核对 */
+        cmpCnt++;
+      }
+    }
+    if(c>0){ cost+=c; costCnt++; }
+  });
+  return {total:total, count:list.length, byStage:byStage, amtStage:amtStage,
+          signGp:signGp, signCost:signCost, signCnt:signCnt,
+          cost:cost, costCnt:costCnt, gpEst:gpEst, overGp:overGp, cmpCnt:cmpCnt, sgpCmp:sgpCmp};
+}
+function renderDashboard(){
+  var list=visibleProjects(), a=agg(list);
+  var scope = isAdmin()? "全公司" : (isFinance()? "全公司（财务复核视角）" : (isPM()? "我负责的项目" : "我参与的项目"));
+  var maxC=1,maxA=1; STAGES.forEach(function(s){maxC=Math.max(maxC,a.byStage[s]||0);maxA=Math.max(maxA,a.amtStage[s]||0);});
+  var colors={"商机":"#f59e0b","投标":"#8b5cf6","售前":"#0ea5e9","合同":"#ec4899","交付":"#3b82f6","已验收":"#22c55e","运维":"#64748b"};
+  var stageRows=STAGES.map(function(s){
+    var c=a.byStage[s]||0, amt=a.amtStage[s]||0;
+    return '<div class="chart-row" data-s="'+esc(s)+'" title="点击查看该阶段项目">'+
+      '<span class="cl">'+esc(s)+'</span>'+
+      '<span class="cw"><i style="width:'+(c/maxC*100)+'%;background:'+colors[s]+'"></i></span>'+
+      '<span class="cv">'+c+' 个 · '+fmtWan(amt)+'万</span></div>';
+  }).join("");
+  /* 项目更新进度：距上次更新时间越久越靠前，提醒项目经理更新 */
+  var updTop=list.slice().sort(function(x,y){
+    var dx=daysSinceUpdate(x), dy=daysSinceUpdate(y);
+    if(dx==null && dy==null) return Number(y.amount||0)-Number(x.amount||0); /* 都没记录时按合同额降序 */
+    if(dx==null) return -1;   /* 从未更新排最前 */
+    if(dy==null) return 1;
+    return dy-dx;
+  }).slice(0,8);
+  var plist=updTop.length? updTop.map(function(p){
+    var d=daysSinceUpdate(p);
+    var cls = d==null? "none" : (d>=UPD_LATE_DAYS? "late" : (d>=UPD_WARN_DAYS? "warn" : "ok"));
+    var when = p.updatedAt? new Date(Number(p.updatedAt)).toLocaleString("zh-CN",{hour12:false}) : "无更新记录";
+    return '<div class="prow" data-c="'+esc(p.code)+'" style="cursor:pointer">'+
+      '<span class="pname" data-c="'+esc(p.code)+'" title="'+esc(p.name)+'">'+esc(p.code)+' '+esc(p.name)+'</span>'+
+      '<span class="pstage">'+stageBadge(p.stage)+'</span>'+
+      '<span class="pupd '+cls+'" title="上次更新：'+esc(when)+'">'+fmtAgo(d)+'</span>'+
+      '<span class="pmtag" title="项目经理">'+esc(p.pm||"未指定")+'</span></div>';
+  }).join("") : '<div class="empty-tip">暂无可见项目</div>';
+  var updHint='<div style="font-size:12px;color:var(--muted);margin-top:8px">提示：距上次更新时间越久越靠前；≥'+UPD_WARN_DAYS+' 天未更新标黄、≥'+UPD_LATE_DAYS+' 天标红，请提醒对应项目经理尽快更新工时与成本。</div>';
+  var kpiHint = (a.signCnt>0 && a.cmpCnt>0)? "" : '<div style="font-size:12px;color:var(--muted);margin:-8px 0 12px">提示：填写《合同额》《签单开发成本》并录入工时/成本项后，自动汇总签单毛利与预估开发毛利</div>';
+  var costRatio = a.total>0? (a.signCost/a.total*100) : 0;
+  var overSub = a.cmpCnt>0
+    ? '签单毛利 '+fmtWan(a.sgpCmp)+' 万 − 预估开发毛利 '+fmtWan(a.gpEst)+' 万 · '+a.cmpCnt+' 个项目可比'
+    : '待录入：需同时具备合同额、签单开发成本与成本明细';
+  var overVal = a.cmpCnt? fmtWan(a.overGp)+' 万' : '待录入';
+  var overColor = a.cmpCnt? (a.overGp>0? 'var(--red)' : (a.overGp<0? 'var(--green)' : '#0891b2')) : '#94a3b8';
+
+  /* ---------- 人员维度汇总 ---------- */
+  var PAL=["#2563eb","#16a34a","#ea8a00","#7c3aed","#0ea5e9","#ec4899","#14b8a6","#64748b","#f97316","#a855f7"];
+  /* 项目经理 / 商务经理：项目数 + 阶段分类 */
+  function groupByPerson(keyFn){
+    var map={};
+    list.forEach(function(p){
+      var k=String(keyFn(p)||"").trim(); if(!k||k==="/") k="未指定";
+      if(!map[k]) map[k]={name:k,total:0,st:{}};
+      map[k].total++;
+      map[k].st[p.stage]=(map[k].st[p.stage]||0)+1;
+    });
+    return Object.keys(map).map(function(k){return map[k];}).sort(function(x,y){
+      return y.total-x.total || (x.name>y.name?1:-1);
+    });
+  }
+  function personTable(rows, firstCol, emptyTxt){
+    var head='<tr><th>'+firstCol+'</th>'+STAGES.map(function(s){return '<th class="num">'+esc(s)+'</th>';}).join("")+'<th class="num">合计</th></tr>';
+    var tot={}, totAll=0;
+    rows.forEach(function(r){ totAll+=r.total; STAGES.forEach(function(s){ tot[s]=(tot[s]||0)+(r.st[s]||0); }); });
+    var body=rows.length? rows.map(function(r){
+      return '<tr><td style="white-space:nowrap">'+esc(r.name)+'</td>'+
+        STAGES.map(function(s){ var c=r.st[s]||0; return '<td class="num"'+(c?'':' style="color:#cbd5e1"')+'>'+(c||"—")+'</td>'; }).join("")+
+        '<td class="num" style="font-weight:bold">'+r.total+'</td></tr>';
+    }).join("") : '<tr><td colspan="'+(STAGES.length+2)+'" class="empty-tip">'+emptyTxt+'</td></tr>';
+    var foot=rows.length? '<tfoot><tr><td style="white-space:nowrap">合计</td>'+
+      STAGES.map(function(s){ return '<td class="num">'+(tot[s]||0)+'</td>'; }).join("")+
+      '<td class="num">'+totAll+'</td></tr></tfoot>' : '';
+    return '<div style="overflow-x:auto"><table class="tbl mini"><thead>'+head+'</thead><tbody>'+body+'</tbody>'+foot+'</table></div>';
+  }
+  var pmRows=groupByPerson(function(p){return p.pm;});
+  var bizRows=groupByPerson(function(p){return p.biz;});
+  var pmCard='<div class="card"><h3><span class="bar"></span>项目经理项目数（按阶段）</h3>'+
+    '<div class="sum-tip">共 '+pmRows.length+' 位项目经理 · '+pmRows.reduce(function(s,r){return s+r.total;},0)+' 个项目</div>'+
+    personTable(pmRows,"项目经理","暂无项目经理数据")+'</div>';
+  var bizCard='<div class="card"><h3><span class="bar"></span>商务经理项目数（按阶段）</h3>'+
+    '<div class="sum-tip">共 '+bizRows.length+' 位商务经理 · '+bizRows.reduce(function(s,r){return s+r.total;},0)+' 个项目</div>'+
+    personTable(bizRows,"商务经理","暂无商务经理数据")+'</div>';
+
+  /* 项目成员：总工时 + 各项目分布 */
+  var memMap={};
+  list.forEach(function(p){
+    var ts=p.ts; if(!ts) return;
+    var rows=ts.rows||[];
+    rows.forEach(function(r){
+      var name=String(r.name||"").trim(); if(!name) return;
+      var h=(r.hours||[]).reduce(function(s,v){return s+Number(v||0);},0);
+      if(!memMap[name]) memMap[name]={name:name,hours:0,proj:{}};
+      memMap[name].hours+=h;
+      if(h>0) memMap[name].proj[p.code]=(memMap[name].proj[p.code]||0)+h;
+    });
+  });
+  var memRows=Object.keys(memMap).map(function(k){return memMap[k];})
+    .filter(function(m){return m.hours>0;})
+    .sort(function(x,y){return y.hours-x.hours;});
+  var maxH=memRows.length? memRows[0].hours : 0;
+  var memBody = memRows.length? memRows.map(function(m){
+    var codes=Object.keys(m.proj).sort(function(x,y){return m.proj[y]-m.proj[x];});
+    var bar='', tags='';
+    codes.forEach(function(c,i){
+      var h=m.proj[c], w=m.hours? (h/m.hours*100):0, col=PAL[i%PAL.length];
+      bar+='<i style="width:'+w+'%;background:'+col+'" title="'+esc(c)+' · '+fmtN(h,1)+' 天（'+(m.hours?Math.round(h/m.hours*100):0)+'%）"></i>';
+      tags+='<span class="dtag" style="border-left:3px solid '+col+'">'+esc(c)+' · '+fmtN(h,1)+' 天</span>';
+    });
+    if(!codes.length) tags='<span style="color:var(--muted);font-size:12px">暂无工时</span>';
+    return '<tr><td style="white-space:nowrap;font-weight:bold">'+esc(m.name)+'</td>'+
+      '<td class="num" style="white-space:nowrap"><b>'+fmtN(m.hours,1)+'</b> 天</td>'+
+      '<td class="num">'+codes.length+'</td>'+
+      '<td><div class="dist"><div class="dbar">'+bar+'</div><div class="dtags">'+tags+'</div></div></td></tr>';
+  }).join("") : '<tr><td colspan="4" class="empty-tip">暂无工时数据，请在项目页填写工时</td></tr>';
+  var memCard='<div class="card"><h3><span class="bar"></span>项目成员总工时及各项目分布</h3>'+
+    '<div class="sum-tip">共 '+memRows.length+' 位成员 · 合计 '+fmtN(memRows.reduce(function(s,m){return s+m.hours;},0),1)+' 人天（仅统计已填写工时的项目）</div>'+
+    '<div style="overflow-x:auto"><table class="tbl mini"><thead><tr>'+
+      '<th>项目成员</th><th class="num">总工时</th><th class="num">参与项目</th><th style="min-width:320px">各项目分布</th>'+
+    '</tr></thead><tbody>'+memBody+'</tbody></table></div></div>';
+
+  content.innerHTML =
+    '<div class="kpis">'+
+      '<div class="kpi k1"><div class="k-label">项目总数（'+esc(scope)+'）</div><div class="k-val">'+a.count+' 个</div><div class="k-sub">当前权限范围内可见项目</div></div>'+
+      '<div class="kpi k2"><div class="k-label">合同总额</div><div class="k-val">'+fmtWan(a.total)+' 万</div><div class="k-sub">合计 '+fmtN(a.total)+' 元</div></div>'+
+      '<div class="kpi k3"><div class="k-label">签单开发成本汇总</div><div class="k-val">'+fmtWan(a.signCost)+' 万</div><div class="k-sub">'+a.signCnt+' 个项目已填报 · 占合同总额 '+fmtN(costRatio,1)+'%</div></div>'+
+      '<div class="kpi k4"><div class="k-label">当前预估开发总成本</div><div class="k-val">'+fmtWan(a.cost)+' 万</div><div class="k-sub">人工 + 住宿/差旅/补贴/风险金 · '+a.costCnt+' 个项目已录入</div></div>'+
+      '<div class="kpi k5"><div class="k-label">预估开发超毛利</div><div class="k-val" style="color:'+overColor+'">'+overVal+'</div><div class="k-sub">'+overSub+'</div></div>'+
+    '</div>'+
+    kpiHint+
+    '<div class="charts">'+
+      '<div class="card"><h3><span class="bar"></span>各阶段项目数（点击进入目录筛选）</h3>'+stageRows+'</div>'+
+      '<div class="card"><h3><span class="bar"></span>项目更新进度（越久未更新越靠前）</h3><div class="plist">'+plist+'</div>'+updHint+'</div>'+
+    '</div>'+
+    '<div class="charts" style="margin-top:18px">'+pmCard+bizCard+'</div>'+
+    '<div style="margin-top:18px">'+memCard+'</div>';
+  Array.prototype.forEach.call(content.querySelectorAll(".chart-row"),function(el){
+    el.onclick=function(){ pendingStageFilter=el.getAttribute("data-s"); location.hash="#/projects"; };
+  });
+  Array.prototype.forEach.call(content.querySelectorAll(".prow[data-c]"),function(el){
+    el.onclick=function(){ location.hash="#/project/"+encodeURIComponent(el.getAttribute("data-c")); };
+  });
+}
+
+/* ---------- 项目目录 ---------- */
+function renderProjects(stageFilter){
+  var list=visibleProjects();
+  var pmSet={}; list.forEach(function(p){ if(p.pm&&p.pm!=="/") pmSet[p.pm]=1; });
+  var pmOpts=Object.keys(pmSet).sort().map(function(n){return '<option>'+esc(n)+'</option>';}).join("");
+  var bizSet={}; list.forEach(function(p){ if(p.biz&&p.biz!=="/") bizSet[p.biz]=1; });
+  var bizOpts=Object.keys(bizSet).sort().map(function(n){return '<option>'+esc(n)+'</option>';}).join("");
+  var stageOpts=STAGES.map(function(s){return '<option'+(stageFilter===s?" selected":"")+'>'+esc(s)+'</option>';}).join("");
+  /* 成本项统一为元，供"当前开发成本"列对比（有 costUnit 标记则跳过，不会二次换算） */
+  list.forEach(function(p){ if(p.ts) normalizeCosts(p.ts); });
+  content.innerHTML =
+    '<div class="card">'+
+    '<div class="section-head"><h3><span class="bar"></span>项目目录（公司项目一览表）</h3>'+
+    (isAdmin()? '<button class="btn-sm btn-main" id="addProjBtn">＋ 新增项目</button>':'')+'</div>'+
+    '<div class="toolbar">'+
+      '<input id="q" placeholder="🔍 搜索项目编号 / 名称 / 客户 / 商务经理" style="min-width:220px">'+
+      '<select id="fBiz"><option value="">全部商务经理</option>'+bizOpts+'</select>'+
+      '<select id="fStage"><option value="">全部阶段</option>'+stageOpts+'</select>'+
+      '<select id="fPm"><option value="">全部项目经理</option>'+pmOpts+'</select>'+
+      '<span style="color:var(--muted);font-size:12px" id="cnt"></span>'+
+    '</div>'+
+    '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+      '<th>项目编号</th><th>项目名称</th><th>客户名称</th><th>商务经理</th><th>项目经理</th><th>项目阶段</th><th class="num">合同额(元)</th><th class="num">签单开发成本(元)</th><th class="num">当前开发成本(元)</th><th>操作</th>'+
+    '</tr></thead><tbody id="tbody"></tbody></table></div>'+
+    '<div style="font-size:12px;color:var(--muted);margin-top:10px">点击项目编号或"进入"可打开该项目页进行信息填写与维护。初始数据导入自钉钉表格《项目预算管理表》。</div>'+
+    '</div>';
+  if($("addProjBtn")) $("addProjBtn").onclick=function(){ openAddProject(); };
+  function draw(){
+    var q=$("q").value.trim().toLowerCase(), fs=$("fStage").value, fp=$("fPm").value, fb=$("fBiz").value;
+    var rows=list.filter(function(p){
+      if(fs&&p.stage!==fs) return false;
+      if(fp&&(p.pm||"")!==fp) return false;
+      if(fb&&(p.biz||"")!==fb) return false;
+      if(q && (p.code+" "+p.name+" "+p.customer+" "+(p.biz||"")+" "+(p.pm||"")).toLowerCase().indexOf(q)<0) return false;
+      return true;
+    });
+    $("cnt").textContent="共 "+rows.length+" 个项目";
+    $("tbody").innerHTML = rows.length? rows.map(function(p){
+      var signDev = p.ts && Number(p.ts.signAmount||0) ? Number(p.ts.signAmount) : 0;
+      var actualDev = p.ts? totalCostYuan(p.ts) : 0;
+      var over = signDev>0 && actualDev>signDev;   /* 超出签单开发成本 → 红底提示 */
+      var overTxt = over? ' title="超出签单开发成本 '+fmtN(actualDev-signDev,0)+' 元"':'';
+      var fullEdit=canEditProject(p)||canEditOwnRow(p);
+      var editable=fullEdit||canEditCost(p);
+      return '<tr>'+
+        '<td><span class="code-link" data-c="'+esc(p.code)+'">'+esc(p.code)+'</span></td>'+
+        '<td style="max-width:320px" title="'+esc(p.name)+'">'+esc(p.name)+'</td>'+
+        '<td style="max-width:200px" title="'+esc(p.customer)+'">'+esc(p.customer)+'</td>'+
+        '<td>'+esc(p.biz)+'</td><td>'+esc(p.pm||"—")+'</td>'+
+        '<td>'+stageBadge(p.stage)+'</td>'+
+        '<td class="num">'+fmtN(p.amount)+'</td>'+
+        '<td class="num" style="color:'+(signDev?'inherit':'#94a3b8')+'">'+(signDev?fmtN(signDev,0):"—")+'</td>'+
+        '<td class="num'+(over?' cost-over':'')+'"'+overTxt+' style="'+(over?'background:#fde8e8;color:#b91c1c;font-weight:bold':'color:'+(actualDev?'inherit':'#94a3b8'))+'">'+(actualDev?fmtN(actualDev,0):"—")+'</td>'+
+        '<td>'+(editable?'<span class="code-link" data-c="'+esc(p.code)+'">'+(fullEdit?'进入':'复核')+'</span>':'<span style="color:#94a3b8">查看</span>')+'</td>'+
+      '</tr>';
+    }).join("") : '<tr><td colspan="10" class="empty-tip">没有符合条件的项目</td></tr>';
+    Array.prototype.forEach.call($("tbody").querySelectorAll(".code-link"),function(el){
+      el.onclick=function(){ location.hash="#/project/"+encodeURIComponent(el.getAttribute("data-c")); };
+    });
+  }
+  $("q").oninput=draw; $("fStage").onchange=draw; $("fPm").onchange=draw; $("fBiz").onchange=draw;
+  draw();
+}
+function openAddProject(){
+  openModal("新增项目",
+    '<div class="form-grid" style="grid-template-columns:1fr 1fr">'+
+    '<div class="fitem"><label>项目年度</label><input id="npYear" value="'+new Date().getFullYear()+'"></div>'+
+    '<div class="fitem"><label>项目名称 *</label><input id="npName"></div>'+
+    '<div class="fitem"><label>客户名称</label><input id="npCust"></div>'+
+    '<div class="fitem"><label>商务经理</label><input id="npBiz"></div>'+
+    '<div class="fitem"><label>项目经理</label><input id="npPm"></div>'+
+    '<div class="fitem"><label>项目阶段</label><select id="npStage">'+STAGES.map(function(s){return '<option>'+s+'</option>';}).join("")+'</select></div>'+
+    '<div class="fitem"><label>合同额（元）</label><input id="npAmt" type="number"></div>'+
+    '<div class="fitem"><label>当前已回款金额（元，仅管理员可填）</label><input id="npPaid" type="text" inputmode="decimal" autocomplete="off" class="paid-input" placeholder="0"></div>'+
+    '</div>',
+    '<button class="btn-sm btn-ghost" id="mCancel">取消</button><button class="btn-sm btn-main" id="mOk">保存</button>',
+    function(){
+      var name=$("npName").value.trim();
+      if(!name){ toast("请填写项目名称"); return false; }
+      var y=$("npYear").value.trim()||String(new Date().getFullYear());
+      var cnt=projects.filter(function(p){return p.year===y;}).length+1;
+      var code=y+"-"+String(cnt).padStart(2,"0");
+      var npAmt=Number($("npAmt").value||0);
+      if(!isFinite(npAmt) || npAmt<0) npAmt=0;
+      /* 已回款只能是正数，且不高于合同额 */
+      var npPaid=numOf($("npPaid").value);
+      if(!isFinite(npPaid) || npPaid<0) npPaid=0;
+      if(npAmt>0 && npPaid>npAmt){ npPaid=npAmt; toast("已回款金额不能高于合同额，已按合同额 "+fmtN(npAmt,0)+" 元记录"); }
+      var p={code:code,year:y,name:name,customer:$("npCust").value.trim(),biz:$("npBiz").value.trim(),
+        stage:$("npStage").value,pm:$("npPm").value.trim(),amount:npAmt,
+        paidAmount:npPaid,members:[],ts:null,isDemo:false,updatedAt:Date.now()};
+      projects.push(p); save(LS.projects,projects);
+      toast("项目已创建："+code);
+      location.hash="#/project/"+encodeURIComponent(code);
+      return true;
+    });
+}
+
+/* ---------- 项目页 ---------- */
+var flagMode=false; /* 付款旗帜插入模式 */
+function renderProjectPage(code){
+  var p=findProject(code);
+  if(!p){ content.innerHTML='<div class="card empty-tip">项目不存在</div>'; return; }
+  if(visibleProjects().indexOf(p)<0){ content.innerHTML='<div class="card empty-tip">无权访问该项目</div>'; return; }
+  var edit=canEditProject(p), own=canEditOwnRow(p);
+  var costEdit=canEditCost(p);   /* 财务复核可改成本项，其他字段仍只读 */
+  var dis=edit?"":"disabled";
+  /* 已回款历史数据归一：只能是正数，且不高于合同额 */
+  var _paid=Number(p.paidAmount||0);
+  if(!isFinite(_paid) || _paid<0) _paid=0;
+  if(Number(p.amount||0)>0 && _paid>Number(p.amount)) _paid=Number(p.amount);
+  p.paidAmount=_paid;
+  var ts=p.ts;
+  if(!ts){
+    ts=p.ts={signAmount:p.amount, rows:[], phases:["","","","","","","","","","","",""],
+      dates:["","","","","","","","","","","",""],
+      costs:{住宿:[0,0,0,0,0,0,0,0,0,0,0,0],差旅:[0,0,0,0,0,0,0,0,0,0,0,0],补贴:[0,0,0,0,0,0,0,0,0,0,0,0],风险金:[0,0,0,0,0,0,0,0,0,0,0,0]}};
+  }
+  normalizeCosts(ts); /* 成本项统一为元（兼容旧的万元数据） */
+  if(!ts.dates) ts.dates=["","","","","","","","","","","",""];
+  if(!ts.flags) ts.flags=(ts.phases||[]).length?ts.phases.map(function(v){return v?"🚩":"";}):["","","","","","","","","","","",""];
+  var W=normalizeWeeks(ts);           /* 周数由"预计开发时长(月)"决定：每月 4 周 */
+  var months=Math.ceil(W/4);
+  var monthGrp="<tr><th class='sticky-l' rowspan='2' style='text-align:left'>人员</th><th rowspan='2'>级别<br><span style='font-weight:normal;font-size:11px;color:#94a3b8'>自动带出</span></th>";
+  for(var mi=0;mi<months;mi++){
+    var span=Math.min(4, W-mi*4);
+    monthGrp+='<th class="grp" colspan="'+span+'">'+(MONTH_CN[mi]||("第"+(mi+1)+"个月"))+'</th>';
+  }
+  monthGrp+='<th rowspan="2">总人天</th><th rowspan="2">人天成本</th><th rowspan="2">金额(元)</th><th rowspan="2">'+(edit?"操作":"")+'</th></tr>';
+  var sch=scheduleWeeks(ts.startDate, W);
+  var wk="<tr>";
+  for(var i=0;i<W;i++){
+    var wl="W"+(i%4+1);
+    if(sch) wl+="("+fmtMD(sch[i].s)+"-"+fmtMD(sch[i].e)+")";
+    wk+='<th data-wk="'+i+'" class="wk-th">'+(ts.flags[i]?"🚩 ":"")+wl+"</th>";
+  }
+  wk+="</tr>";
+
+  var bodyRows = (ts.rows||[]).map(function(r,ri){
+    var rowEditable = edit || (own && r.name===session.name);
+    var d=rowEditable?"":"disabled";
+    var lvShow=levelOfPerson(r.name)||r.level;   /* 职级从基础数据带出 */
+    var t='<tr data-ri="'+ri+'"><td class="sticky-l">'+esc(r.name)+'</td><td>'+esc(lvShow)+'</td>';
+    for(var i=0;i<W;i++) t+='<td><input type="number" min="0" max="5" step="0.5" data-h="'+i+'" value="'+(r.hours[i]||0)+'" title="0~5 天，可按 0.5 天填写" '+d+'></td>';
+    t+='<td class="sum rs-sum">'+fmtN(rowSum(r),1)+'</td>'+
+       '<td class="sum">'+fmtN(rowRate(r),1)+'</td>'+
+       '<td class="sum rs-amt">'+fmtN(rowAmount(r))+'</td>'+
+       '<td>'+(rowEditable?'<button class="link-btn row-del" data-ri="'+ri+'">删除</button>':'')+'</td></tr>';
+    return t;
+  }).join("");
+  if(!(ts.rows||[]).length) bodyRows='<tr><td colspan="'+(W+6)+'" style="color:var(--muted);padding:14px">'+(edit?'暂无人员，请点击"添加人员"':'暂无人员数据')+'</td></tr>';
+
+  function costRow(cat){
+    var arr=ts.costs[cat]||[];
+    var cdis=costEdit?"":"disabled";
+    var t='<tr><td class="sticky-l">'+esc(cat)+'(元)</td>';
+    for(var i=0;i<W;i++){
+      var cv=Number(arr[i]||0);
+      t+='<td><input type="text" inputmode="decimal" autocomplete="off" class="cost-cell" data-cost="'+esc(cat)+'" data-ci="'+i+'" value="'+(cv?cv:"")+'" placeholder="0" '+cdis+'></td>';
+    }
+    t+='<td class="sum cost-sum" data-costsum="'+esc(cat)+'">'+fmtN(costCatTotal(ts,cat),2)+'</td></tr>';
+    return t;
+  }
+  var costHead='<tr><th class="sticky-l" rowspan="2" style="text-align:left">成本项(元)</th>';
+  for(var ci2=0;ci2<months;ci2++){
+    var span2=Math.min(4, W-ci2*4);
+    costHead+='<th class="grp" colspan="'+span2+'">'+(MONTH_CN[ci2]||("第"+(ci2+1)+"个月"))+'</th>';
+  }
+  costHead+='<th rowspan="2">合计(元)</th></tr>'+wk;
+
+  var gm=grossProfit(ts), gmp=grossMarginPct(ts);
+  var memberStr=(p.members||[]).join("、");
+  /* 人员下拉：只选人员名称，职级由基础数据自动带出；已在本项目的人员置灰 */
+  var picked={};
+  (ts.rows||[]).forEach(function(r){ picked[String(r.name||"").trim().toLowerCase()]=1; });
+  var personOpts=rates.map(function(r){
+    var nm=String(r.name||"").trim();
+    if(!nm) return "";
+    var dup=!!picked[nm.toLowerCase()];
+    return '<option value="'+esc(nm)+'" data-level="'+esc(r.level||"")+'"'+(dup?" disabled":"")+'>'+
+      esc(nm)+'（'+esc(r.level||"未设职级")+(dup?" · 已添加":"")+'）</option>';
+  }).join("");
+  if(!personOpts) personOpts='<option value="">基础数据暂无人员，请先在“基础数据”维护</option>';
+
+  content.innerHTML =
+    '<div class="pj-topbar">'+
+      '<div class="crumb" id="backBtn">‹ 返回项目目录</div>'+
+      ((edit||own||costEdit)?'<button class="btn-sm btn-main" id="saveBtn">💾 保存本项目</button>':'')+
+    '</div>'+
+    '<div class="card">'+
+      '<div class="pj-head"><span class="code">'+esc(p.code)+'</span>'+stageBadge(p.stage)+
+        (p.isDemo?'<span class="demo-badge">示例数据（来自模板演示，可修改）</span>':'')+
+        (edit?(isAdmin()?'<span style="font-size:12px;color:var(--muted)">管理员：可编辑全部内容</span>':'<span style="font-size:12px;color:var(--muted)">您可编辑本项目内容（已回款金额仅管理员可填）</span>'):
+         own?'<span style="font-size:12px;color:var(--muted)">您是项目成员，仅可填写自己的工时</span>':
+         isFinance()?'<span style="font-size:12px;color:#b45309;background:#fef3c7;padding:2px 8px;border-radius:20px">财务复核：可订正成本项，其余只读</span>':
+             '<span style="font-size:12px;color:var(--muted)">只读查看</span>')+
+        '<span class="upd-chip'+(function(){var d=daysSinceUpdate(p);return d==null?" none":(d>=UPD_LATE_DAYS?" late":(d>=UPD_WARN_DAYS?" warn":" ok"));})()+'">上次更新：'+fmtAgo(daysSinceUpdate(p))+'</span>'+
+      '</div>'+
+      '<div style="font-size:15px;font-weight:bold;margin:4px 0 14px">'+esc(p.name)+'</div>'+
+      '<div class="form-grid">'+
+        '<div class="fitem"><label>客户名称</label><input id="pf-cust" value="'+esc(p.customer)+'" '+dis+'></div>'+
+        '<div class="fitem"><label>商务经理</label><input id="pf-biz" value="'+esc(p.biz)+'" '+dis+'></div>'+
+        '<div class="fitem"><label>项目经理</label><input id="pf-pm" value="'+esc(p.pm||"")+'" '+dis+'></div>'+
+        '<div class="fitem"><label>项目阶段</label><select id="pf-stage" '+dis+'>'+STAGES.map(function(s){return '<option'+(p.stage===s?" selected":"")+'>'+s+'</option>';}).join("")+'</select></div>'+
+        '<div class="fitem"><label>合同额（元）</label><input id="pf-amt" type="number" value="'+(p.amount||0)+'" '+dis+'></div>'+
+        '<div class="fitem"><label>签单开发成本（元）</label><input id="pf-samt" type="number" value="'+(ts.signAmount||0)+'" '+dis+'></div>'+
+        '<div class="fitem"><label>当前已回款金额（元）'+(isAdmin()?"":'<span style="color:#94a3b8;font-weight:normal">（仅管理员可填）</span>')+'</label>'+
+          '<input id="pf-paid" type="text" inputmode="decimal" autocomplete="off" class="paid-input" placeholder="0" value="'+(Number(p.paidAmount||0)?Number(p.paidAmount||0):"")+'" '+(isAdmin()?"":"disabled")+'>'+
+          '<div id="pf-paid-rate" style="font-size:11px;color:var(--muted);margin-top:4px">已回款率（已回款 ÷ 合同额）：'+
+            (Number(p.amount)>0? fmtN(Math.min(9999,Number(p.paidAmount||0)/Number(p.amount)*100),1)+"%" : "待填合同额")+
+            (isAdmin()?'　·　改完请点左上角「保存本项目」':'')+'</div></div>'+
+        '<div class="fitem"><label>项目成员（顿号分隔，成员可见本项目）</label><input id="pf-members" value="'+esc(memberStr)+'" placeholder="如：张三、李四" '+dis+'></div>'+
+      '</div>'+
+    '</div>'+
+
+    '<div class="card"><h3><span class="bar"></span>项目利润测算（自动汇总）</h3>'+
+    '<div class="alert-neg" id="negAlert" style="display:'+((gm!=null&&gm<0)?"block":"none")+'">⚠️ 项目毛利为负：已超出签单开发成本 '+fmtN(gm==null?0:Math.abs(gm),0)+' 元，请核查工时投入与成本项预算。</div>'+
+    '<div class="calc-grid">'+
+      '<div class="calc-item"><div class="cl">人工成本合计</div><div class="cv" id="cLabor">'+fmtN(laborTotal(ts),0)+' 元</div></div>'+
+      '<div class="calc-item"><div class="cl">其他成本合计</div><div class="cv" id="cOther">'+fmtN(otherCostYuan(ts),0)+' 元</div></div>'+
+      '<div class="calc-item"><div class="cl">实际开发成本合计</div><div class="cv" id="cActual">'+fmtN(totalCostYuan(ts),0)+' 元</div></div>'+
+      '<div class="calc-item"><div class="cl">签单开发成本</div><div class="cv" id="cSignDev">'+(Number(ts.signAmount||0)?fmtN(ts.signAmount,0)+' 元':"未填写")+'</div></div>'+
+      '<div class="calc-item hl"><div class="cl">项目毛利</div><div class="cv" id="cProfit"'+(gm!=null&&gm<0?' style="color:var(--red)"':'')+'>'+(gm==null?"待填写":fmtN(gm,0)+' 元')+'</div></div>'+
+      '<div class="calc-item"><div class="cl">项目纯利率（项目毛利÷签单开发成本）</div><div class="cv" id="cMargin">'+(gmp==null?"待填写":fmtN(gmp,1)+"%")+'</div></div>'+
+    '</div>'+
+    '</div>'+
+
+    '<div class="card"><div class="section-head"><h3><span class="bar"></span>工时管理（天，单周 0~5 天，可填 0.5）</h3>'+
+      (edit?'<span><select id="addPerson" title="只选人员名称，职级自动带出" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;min-width:150px">'+personOpts+'</select>'+
+        '<button class="btn-sm btn-main" id="addRow" style="margin-left:8px">＋ 添加人员</button></span>':'')+
+    '</div>'+
+    '<div class="io-bar">'+
+      '<span class="io-tip" style="display:inline-flex;align-items:center;gap:8px;margin-right:auto">'+
+        '<label style="font-size:13px;color:var(--muted)">预计开发时长</label>'+
+        '<input type="number" id="devMonths" min="0.5" max="12" step="0.5" value="'+(ts.devMonths||3)+'" '+(edit?"":"disabled")+
+          ' style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:74px;text-align:right'+(edit?"":';background:#f4f6fa;color:#94a3b8')+'">'+
+        '<span style="font-size:13px;color:var(--muted)">月</span>'+
+        '<label style="font-size:13px;color:var(--muted);margin-left:8px">项目开始时间</label>'+
+        '<input type="date" id="startDate" value="'+esc(ts.startDate||"")+'" '+((ts.startDate||!edit)?"disabled":"")+
+          ' style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px'+((ts.startDate||!edit)?';background:#f4f6fa;color:#94a3b8':'')+'">'+
+        (edit?'<button class="btn-sm '+(flagMode?'btn-main':'btn-ghost')+'" id="flagBtn">'+(flagMode?'🚩 请点击某一周（再按取消）':'🚩 插入付款旗帜')+'</button>':'')+
+      '</span>'+
+      (edit?'<button class="btn-sm btn-ghost" id="expTsBtn" title="导出后用 Excel 编辑，另存为 CSV 再导入">⬇ 导出工时模板</button>'+
+        '<button class="btn-sm btn-ghost" id="impTsBtn" title="导入会覆盖本项目全部工时行">⬆ 导入工时</button>'+
+        '<input type="file" id="impTsFile" accept=".csv,text/csv" style="display:none">':'')+
+    '</div>'+
+    '<div class="ts-wrap"><table class="ts">'+
+      '<thead>'+monthGrp+wk+'</thead>'+
+      '<tbody id="tsBody">'+bodyRows+'</tbody>'+
+    '</table></div>'+
+    '</div>'+
+
+    '<div class="card"><div class="section-head"><h3><span class="bar"></span>成本项（元）'+(isFinance()?'<span style="font-size:12px;font-weight:normal;color:#b45309;margin-left:8px">财务复核</span>':'')+'</h3>'+
+      (costEdit?'<span style="display:inline-flex;gap:8px">'+
+        '<button class="btn-sm btn-ghost" id="expCostBtn">⬇ 导出成本模板</button>'+
+        '<button class="btn-sm btn-ghost" id="impCostBtn">⬆ 导入成本</button>'+
+        '<input type="file" id="impCostFile" accept=".csv,text/csv" style="display:none">'+
+      '</span>':'')+
+    '</div>'+
+    (isFinance()?'<div class="fin-tip">🔍 复核模式：点开对应周的成本格子直接改数（单位元，空白=0），修改即时汇总；核对完成后请点右上角「保存本项目」落库。</div>':'')+
+    '<div class="ts-wrap"><table class="ts"><thead>'+costHead+'</thead><tbody>'+["住宿","差旅","补贴","风险金"].map(costRow).join("")+
+      '<tr class="sumrow"><td class="sticky-l">其他成本合计(元)</td><td colspan="'+(W+1)+'" class="sum" id="otherSum">'+fmtN(otherCostYuan(ts),0)+'</td></tr>'+
+    '</tbody></table></div></div>';
+
+  $("backBtn").onclick=function(){ location.hash="#/projects"; };
+  bindProjectPage(p, edit, own);
+}
+function bindProjectPage(p, edit, own){
+  /* 统一落库入口：写入本次更新时间，供驾驶舱「项目更新进度」排序/提醒 */
+  function persist(){ markUpdated(p); save(LS.projects,projects); }
+  /* 信息输入实时写内存 */
+  ["cust","biz","pm"].forEach(function(k){
+    var el=$("pf-"+k); if(el&&!el.disabled) el.oninput=function(){ p[{cust:"customer",biz:"biz",pm:"pm"}[k]]=el.value; };
+  });
+  var st=$("pf-stage"); if(st&&!st.disabled) st.onchange=function(){ p.stage=st.value; };
+  var amt=$("pf-amt"); if(amt&&!amt.disabled) amt.oninput=function(){
+    p.amount=Number(amt.value||0);
+    /* 合同额调小后，已回款可能超上限，同步收敛 */
+    if(typeof paidCommit==="function") paidCommit(false);
+  };
+  var samt=$("pf-samt"); if(samt&&!samt.disabled) samt.oninput=function(){ p.ts.signAmount=Number(samt.value||0); recalc(); };
+  /* 当前已回款金额：仅管理员可填；只允许正数且不超过合同额，无步进按钮 */
+  var paid=$("pf-paid");
+  function paidCommit(showTip){
+    if(!paid) return;
+    var cap=Number(p.amount||0);
+    var n=numOf(paid.value);
+    if(!isFinite(n) || n<0) n=0;          /* 负数一律按 0 处理 */
+    var capped=false;
+    if(cap>0 && n>cap){ n=cap; capped=true; }
+    p.paidAmount=n;
+    paid.value = n? n : "";
+    var rd=$("pf-paid-rate");
+    if(rd){
+      var txt;
+      if(cap>0) txt="已回款率（已回款 ÷ 合同额）："+fmtN(Math.min(9999,n/cap*100),1)+"%";
+      else txt="已回款率：待填合同额";
+      if(capped) txt+="　·　⚠️ 已回款不能高于合同额，已自动调整为 "+fmtN(cap,0)+" 元";
+      else if(cap<=0 && n>0) txt+="　·　⚠️ 合同额未填写，暂无法校验上限";
+      else txt+="　·　改完请点左上角「保存本项目」";
+      rd.textContent=txt;
+      rd.style.color = (capped||(cap<=0&&n>0))? "var(--red)" : "var(--muted)";
+    }
+    if(capped && showTip) toast("已回款金额不能高于合同额，已调整为 "+fmtN(cap,0)+" 元");
+  }
+  if(paid&&!paid.disabled){
+    paid.oninput=function(){
+      /* 只保留数字与一个小数点：负数、千分位、字母都会被清理 */
+      var raw=String(paid.value).replace(/[^\d.]/g,"");
+      var ps=raw.split("."); if(ps.length>2) raw=ps[0]+"."+ps.slice(1).join("");
+      if(raw!==paid.value) paid.value=raw;
+      paidCommit(false);
+    };
+    paid.onblur=function(){ paidCommit(true); };
+    paid.onkeydown=function(e){
+      if(e.keyCode===13){ paid.blur(); }                 /* 回车即完成 */
+      if(e.keyCode===38||e.keyCode===40) e.preventDefault(); /* 屏蔽上下方向键改数值 */
+    };
+  }
+  var mb=$("pf-members"); if(mb&&!mb.disabled) mb.oninput=function(){ p.members=mb.value.split(/[、,，\s]+/).filter(Boolean); };
+  /* 工时输入（固定区间：0~5 天/周，0.5 天步进） */
+  Array.prototype.forEach.call(content.querySelectorAll("input[data-h]"),function(el){
+    el.oninput=function(){
+      var tr=el.closest("tr"); var ri=Number(tr.getAttribute("data-ri"));
+      var row=p.ts.rows[ri]; if(!row) return;
+      var v=el.value===""?"":Number(el.value);
+      if(v!=="" && isFinite(v)){
+        /* 超出 0~5 立即收敛，避免录入 7 天这类无效值 */
+        if(v<0){ v=0; el.value=0; }
+        if(v>5){ v=5; el.value=5; }
+      }
+      row.hours[Number(el.getAttribute("data-h"))]=v===""?0:Number(v);
+      tr.querySelector(".rs-sum").textContent=fmtN(rowSum(row),1);
+      tr.querySelector(".rs-amt").textContent=fmtN(rowAmount(row));
+      recalc();
+    };
+    el.onblur=function(){
+      var tr=el.closest("tr"); var ri=Number(tr.getAttribute("data-ri"));
+      var row=p.ts.rows[ri]; if(!row) return;
+      var ci=Number(el.getAttribute("data-h"));
+      var v=Number(el.value||0);
+      if(!isFinite(v)) v=0;
+      /* 失焦时按 0.5 天取整并夹在 0~5 之间 */
+      v=Math.min(5,Math.max(0,Math.round(v*2)/2));
+      el.value=v;
+      row.hours[ci]=v;
+      tr.querySelector(".rs-sum").textContent=fmtN(rowSum(row),1);
+      tr.querySelector(".rs-amt").textContent=fmtN(rowAmount(row));
+      recalc();
+    };
+  });
+  /* 预计开发时长（月，0.5 步进）→ 决定周列数与月份分组 */
+  var dm=$("devMonths");
+  if(dm&&!dm.disabled) dm.onchange=function(){
+    var v=Number(dm.value);
+    if(!isFinite(v) || v<=0){ toast("请输入大于 0 的时长"); dm.value=p.ts.devMonths||3; return; }
+    if(Math.abs(v*2-Math.round(v*2))>0.001){ toast("时长只能填整数或 0.5 的倍数（如 1.5）"); dm.value=p.ts.devMonths||3; return; }
+    if(v<0.5) v=0.5;
+    if(v>12) v=12;
+    /* 缩短时长会裁掉后面周的数据，先确认避免误删 */
+    var oldW=weekCount(p.ts), newW=Math.round(v*4);
+    if(newW<oldW){
+      var lost=false;
+      (p.ts.rows||[]).forEach(function(r){
+        for(var i=newW;i<oldW;i++){ if(Number((r.hours||[])[i]||0)!==0) lost=true; }
+      });
+      ["住宿","差旅","补贴","风险金"].forEach(function(c){
+        var a=(p.ts.costs||{})[c]||[];
+        for(var i=newW;i<oldW;i++){ if(Number(a[i]||0)!==0) lost=true; }
+      });
+      if(lost && !confirm("缩短时长将删除第 "+(newW+1)+" 周及以后的工时/成本数据，是否继续？")){
+        dm.value=p.ts.devMonths; return;
+      }
+    }
+    p.ts.devMonths=v;
+    normalizeWeeks(p.ts);
+    persist();
+    renderProjectPage(p.code);
+    toast("预计开发时长 "+v+" 个月 → 共 "+(Math.round(v*4))+" 周（每月 4 周）");
+  };
+  /* 项目开始时间：选定后锁定，并自动按每周5个工作日排期 */
+  var sd=$("startDate");
+  if(sd&&!sd.disabled) sd.onchange=function(){
+    if(!sd.value) return;
+    p.ts.startDate=sd.value;
+    persist();
+    renderProjectPage(p.code);
+    toast("已按开始时间 "+sd.value+" 自动排期（每周 5 个工作日）");
+  };
+  /* 付款旗帜：按一次按钮→点击某周列插入一面旗帜 */
+  var fb=$("flagBtn");
+  if(fb) fb.onclick=function(){ flagMode=!flagMode; renderProjectPage(p.code); };
+  Array.prototype.forEach.call(content.querySelectorAll("th[data-wk]"),function(el){
+    if(edit) el.style.cursor="pointer";
+    el.title=edit?(p.ts.flags[Number(el.getAttribute("data-wk"))]?"点击移除旗帜":""):"";
+    el.onclick=function(){
+      if(!edit) return;
+      var i=Number(el.getAttribute("data-wk"));
+      if(flagMode){
+        if(p.ts.flags[i]){ toast("该周已有付款旗帜，请选择其他周"); return; }
+        p.ts.flags[i]="🚩"; flagMode=false;
+        persist();
+        renderProjectPage(p.code);
+        toast("已在第 "+(i%4+1)+" 周插入付款旗帜（已保存）");
+      }else if(p.ts.flags[i]){
+        if(confirm("确定移除第 "+(i%4+1)+" 周的付款旗帜？")){
+          p.ts.flags[i]=""; persist(); renderProjectPage(p.code);
+        }
+      }
+    };
+  });
+  /* 成本项：直接填写即可（无增减按钮，输入即时汇总） */
+  function costCellCommit(el, fillEmpty){
+    var cat=el.getAttribute("data-cost"), ci=Number(el.getAttribute("data-ci"));
+    if(!p.ts.costs[cat]) p.ts.costs[cat]=[];
+    var n=numOf(el.value);
+    p.ts.costs[cat][ci]=n;
+    if(fillEmpty) el.value = n? n : "";
+    var s=content.querySelector('[data-costsum="'+cat+'"]'); if(s) s.textContent=fmtN(costCatTotal(p.ts,cat),2);
+    var os=$("otherSum"); if(os) os.textContent=fmtN(otherCostYuan(p.ts),0);
+    recalc();
+  }
+  Array.prototype.forEach.call(content.querySelectorAll("input[data-cost]"),function(el){
+    el.oninput=function(){
+      /* 只允许数字和一个小数点，粘贴带千分位也能清理 */
+      var raw=String(el.value).replace(/[^\d.]/g,"");
+      var ps=raw.split("."); if(ps.length>2) raw=ps[0]+"."+ps.slice(1).join("");
+      if(raw!==el.value) el.value=raw;
+      costCellCommit(el, false);
+    };
+    el.onblur=function(){ costCellCommit(el, true); };
+    el.onkeydown=function(e){
+      if(e.keyCode===13){ el.blur(); }
+      if(e.keyCode===38||e.keyCode===40) e.preventDefault(); /* 屏蔽上下方向键改数值 */
+    };
+  });
+  /* 添加/删除人员：只能从基础数据里选人员，职级自动带出 */
+  var addBtn=$("addRow");
+  if(addBtn) addBtn.onclick=function(){
+    var sel=$("addPerson");
+    var n=sel? String(sel.value||"").trim() : "";
+    if(sel && sel.selectedIndex>=0 && sel.options[sel.selectedIndex].disabled){
+      toast("所有人员都已在本项目工时表中"); return;
+    }
+    if(!n){ toast("请选择人员：人员名称在「基础数据」中维护"); return; }
+    var exist=false;
+    (p.ts.rows||[]).forEach(function(r){ if(String(r.name||"").trim().toLowerCase()===n.toLowerCase()) exist=true; });
+    if(exist){ toast(n+" 已在项目工时表中"); return; }
+    var lv=levelOfPerson(n);
+    if(!lv && sel.options && sel.selectedIndex>=0) lv=sel.options[sel.selectedIndex].getAttribute("data-level")||"";
+    p.ts.rows.push({name:n, level:lv, hours:new Array(weekCount(p.ts)).fill(0)});
+    if((p.members||[]).indexOf(n)<0) p.members.push(n);
+    persist();
+    renderProjectPage(p.code);
+    toast("已添加 "+n+"（"+lv+"）");
+  };
+  Array.prototype.forEach.call(content.querySelectorAll(".row-del"),function(el){
+    el.onclick=function(){
+      var ri=Number(el.getAttribute("data-ri"));
+      var row=p.ts.rows[ri];
+      if(row && !confirm("确定删除人员 "+row.name+" 的工时行？")) return;
+      p.ts.rows.splice(ri,1);
+      renderProjectPage(p.code);
+    };
+  });
+  /* 工时 CSV：导出模板 / 导入 */
+  var expTs=$("expTsBtn");
+  if(expTs) expTs.onclick=function(){
+    var rows=[["人员","级别（自动带出）"].concat(weekLabelList(p.ts))];
+    var src=p.ts.rows||[], W=weekCount(p.ts);
+    if(src.length){
+      src.forEach(function(r){ rows.push([r.name, r.level].concat((r.hours||[]).slice(0,W))); });
+    }else{
+      var firstP=rates[0]||{name:"张三",level:"P3"};
+      rows.push([firstP.name, firstP.level].concat(new Array(W).fill(0)));
+    }
+    rows.push(["说明：人员名称必须与「基础数据」中一致，级别按基础数据自动带出，导入时忽略本列"]);
+    downloadCsv("工时模板_"+p.code+".csv", rows);
+    toast("工时模板已导出，可用 Excel 编辑");
+  };
+  var impTsBtn=$("impTsBtn"), impTsFile=$("impTsFile");
+  if(impTsBtn&&impTsFile){
+    impTsBtn.onclick=function(){ impTsFile.value=""; impTsFile.click(); };
+    impTsFile.onchange=function(){
+      var f=impTsFile.files&&impTsFile.files[0]; if(!f) return;
+      readCsvFile(f, function(text){
+        var rows=parseCsvText(text), out=[], W=weekCount(p.ts), miss=[];
+        for(var i=1;i<rows.length;i++){
+          var r=rows[i]||[];
+          var name=String(r[0]==null?"":r[0]).trim();
+          if(!name || name.indexOf("说明")===0) continue;
+          /* 职级以基础数据中该人员的职级为准，人员不在基础数据里则跳过 */
+          var lv=levelOfPerson(name);
+          if(!lv){ miss.push(name); continue; }
+          var hrs=[]; for(var j=0;j<W;j++) hrs.push(Math.min(5,Math.max(0,Math.round(numOf(r[2+j])*2)/2)));
+          out.push({name:name, level:lv, hours:hrs});
+        }
+        if(!out.length){
+          toast(miss.length? ("人员未在基础数据中："+miss.slice(0,3).join("、")+(miss.length>3?" 等":"")+"，请先在「基础数据」维护")
+                           : "未识别到有效数据，请使用导出的模板填写后导入");
+          return;
+        }
+        p.ts.rows=out;
+        persist();
+        toast("已导入 "+out.length+" 行工时"+(miss.length?("，跳过 "+miss.length+" 位未登记人员"):""));
+        renderProjectPage(p.code);
+      });
+    };
+  }
+  /* 成本项 CSV：导出模板 / 导入 */
+  var expCost=$("expCostBtn");
+  if(expCost) expCost.onclick=function(){
+    var rows=[["成本项(元)"].concat(weekLabelList(p.ts))], W=weekCount(p.ts);
+    ["住宿","差旅","补贴","风险金"].forEach(function(c){
+      rows.push([c].concat(((p.ts.costs||{})[c]||[]).slice(0,W)));
+    });
+    downloadCsv("成本项模板_"+p.code+".csv", rows);
+    toast("成本项模板已导出，可用 Excel 编辑");
+  };
+  var impCostBtn=$("impCostBtn"), impCostFile=$("impCostFile");
+  if(impCostBtn&&impCostFile){
+    impCostBtn.onclick=function(){ impCostFile.value=""; impCostFile.click(); };
+    impCostFile.onchange=function(){
+      var f=impCostFile.files&&impCostFile.files[0]; if(!f) return;
+      readCsvFile(f, function(text){
+        var rows=parseCsvText(text), cats=["住宿","差旅","补贴","风险金"], hit=0, W=weekCount(p.ts);
+        for(var i=1;i<rows.length;i++){
+          var r=rows[i]||[], name=String(r[0]==null?"":r[0]).trim();
+          if(!name) continue;
+          var cat=null;
+          for(var k=0;k<cats.length;k++){ if(name.indexOf(cats[k])>=0){ cat=cats[k]; break; } }
+          if(!cat) continue;
+          var vals=[]; for(var j=0;j<W;j++) vals.push(numOf(r[1+j]));
+          p.ts.costs[cat]=vals; hit++;
+        }
+        if(!hit){ toast("未匹配到成本项，第一列需包含 住宿/差旅/补贴/风险金"); return; }
+        persist();
+        toast("已导入 "+hit+" 类成本项");
+        renderProjectPage(p.code);
+      });
+    };
+  }
+  /* 保存 */
+  var saveBtnEl=$("saveBtn");
+  if(saveBtnEl) saveBtnEl.onclick=function(){
+    persist();
+    toast("已保存："+p.code+" "+p.name+"（更新于 "+new Date().toLocaleString("zh-CN",{hour12:false})+")");
+  };
+  function recalc(){
+    var ts=p.ts;
+    $("cLabor").textContent=fmtN(laborTotal(ts),0)+" 元";
+    $("cOther").textContent=fmtN(otherCostYuan(ts),0)+" 元";
+    $("cActual").textContent=fmtN(totalCostYuan(ts),0)+" 元";
+    $("cSignDev").textContent=Number(ts.signAmount||0)?fmtN(ts.signAmount,0)+" 元":"未填写";
+    var gm=grossProfit(ts), gmp=grossMarginPct(ts);
+    var pr=$("cProfit");
+    if(gm==null){ pr.textContent="待填写"; pr.style.color=""; }
+    else{ pr.textContent=fmtN(gm,0)+" 元"; pr.style.color=gm<0?"var(--red)":""; }
+    $("cMargin").textContent= gmp==null? "待填写" : fmtN(gmp,1)+"%";
+    var al=$("negAlert");
+    if(al){
+      if(gm!=null && gm<0){
+        al.style.display="block";
+        al.textContent="⚠️ 项目毛利为负：已超出签单开发成本 "+fmtN(Math.abs(gm),0)+" 元，请核查工时投入与成本项预算。";
+      } else al.style.display="none";
+    }
+  }
+}
+
+/* ---------- 用户管理（管理员） ---------- */
+function renderUsers(){
+  content.innerHTML =
+    '<div class="card"><div class="section-head"><h3><span class="bar"></span>用户管理（手机号注册，首次登录自动注册为项目成员）</h3>'+
+    '<button class="btn-sm btn-main" id="addUserBtn">＋ 新增用户</button></div>'+
+    '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>账号</th><th>姓名（用于匹配项目经理/成员）</th><th>角色</th><th>权限说明</th><th>操作</th></tr></thead><tbody>'+
+    users.map(function(u,i){
+      var perm={
+        admin:"全部权限：所有项目查看/编辑、用户管理、基础数据、驾驶舱全公司数据",
+        pm:"本人作为项目经理的项目：表格填写与查看、驾驶舱本项目数据",
+        member:"本人参与的项目：仅可填写自己的工时",
+        finance:"全部项目的成本项复核：可查看所有项目并订正各周成本项，工时/基础信息只读"
+      }[u.role];
+      var isPhone=/^1\d{10}$/.test(u.u);
+      return '<tr><td>'+esc(u.u)+(isPhone?' <span style="font-size:11px;color:var(--muted)">手机号</span>':'')+'</td>'+
+        '<td><input class="name-edit" data-ri="'+i+'" value="'+esc(u.name)+'" style="width:130px;padding:6px 8px;border:1px solid var(--border);border-radius:6px"></td>'+
+        '<td><select class="role-sel" data-ri="'+i+'">'+["admin","pm","member","finance"].map(function(r){return '<option value="'+r+'"'+(u.role===r?" selected":"")+'>'+ROLE_NAME[r]+'</option>';}).join("")+'</select></td>'+
+        '<td style="font-size:12px;color:var(--muted);max-width:340px">'+perm+'</td>'+
+        '<td>'+(isPhone?'<span style="font-size:12px;color:var(--muted)">密码=手机号后6位</span>':'<button class="link-btn pwd-reset" data-ri="'+i+'">重置密码</button>')+
+        ' <button class="link-btn user-del" data-ri="'+i+'" style="color:var(--red)">删除</button></td></tr>';
+    }).join("")+
+    '</tbody></table></div>'+
+    '<div style="font-size:12px;color:var(--muted);margin-top:10px">提示：新手机号登录后自动注册为「项目成员」。将其"姓名"改为与项目目录中的项目经理/成员姓名一致，即可自动获得对应项目的权限。<br>「财务复核」不受项目归属限制，可查看全部项目并订正成本项（工时、基础信息只读），适合财务对已发生成本做复核。人员工资与人天成本请在"基础数据"菜单中维护。</div>'+
+    '</div>';
+  $("addUserBtn").onclick=function(){
+    openModal("新增用户",
+      '<div class="fitem"><label>账号（11位手机号或 admin）</label><input id="nuU"></div>'+
+      '<div class="fitem"><label>姓名</label><input id="nuN"></div>'+
+      '<div class="fitem"><label>角色</label><select id="nuR"><option value="pm">项目经理</option><option value="member">项目成员</option><option value="finance">财务复核</option><option value="admin">管理员</option></select></div>'+
+      '<div class="fitem"><label>初始密码</label><input id="nuP" value="123456"></div>',
+      '<button class="btn-sm btn-ghost" id="mCancel">取消</button><button class="btn-sm btn-main" id="mOk">保存</button>',
+      function(){
+        var u=$("nuU").value.trim(), n=$("nuN").value.trim()||u;
+        if(!u){ toast("请填写账号"); return false; }
+        if(users.some(function(x){return x.u===u;})){ toast("账号已存在"); return false; }
+        users.push({u:u,name:n,role:$("nuR").value,pwd:$("nuP").value||"123456"});
+        save(LS.users,users); toast("用户已创建："+u); return true;
+      });
+  };
+  Array.prototype.forEach.call(content.querySelectorAll(".name-edit"),function(el){
+    el.oninput=function(){ var i=Number(el.getAttribute("data-ri")); users[i].name=el.value.trim()||users[i].u; save(LS.users,users); };
+  });
+  Array.prototype.forEach.call(content.querySelectorAll(".role-sel"),function(el){
+    el.onchange=function(){ users[Number(el.getAttribute("data-ri"))].role=el.value; save(LS.users,users); toast("角色已更新"); };
+  });
+  Array.prototype.forEach.call(content.querySelectorAll(".pwd-reset"),function(el){
+    el.onclick=function(){
+      var u=users[Number(el.getAttribute("data-ri"))];
+      var np=prompt("为 "+u.u+" 设置新密码："); if(np==null) return;
+      u.pwd=np||"123456"; save(LS.users,users); toast("密码已重置");
+    };
+  });
+  Array.prototype.forEach.call(content.querySelectorAll(".user-del"),function(el){
+    el.onclick=function(){
+      var i=Number(el.getAttribute("data-ri")), u=users[i];
+      if(u.u==="admin"){ toast("内置管理员不可删除"); return; }
+      if(u.u===session.u){ toast("不能删除当前登录账号"); return; }
+      if(confirm("确定删除用户 "+u.u+"（"+ROLE_NAME[u.role]+"）？")){
+        users.splice(i,1); save(LS.users,users); renderUsers();
+      }
+    };
+  });
+}
+
+/* ---------- 基础数据：人员工资与人天成本（管理员） ---------- */
+/* 批量导出：前三列可编辑，后两列为公式结果（导入时忽略） */
+function exportRatesCsv(){
+  var rows=[["人员名称","职级","工资（元/月）","社保公积金（元/月）","人天成本（元/天）"]];
+  rates.forEach(function(r){
+    rows.push([r.name||"", r.level||"", Number(r.salary||0),
+      Math.round(socOf(r)*100)/100, Math.round(costOfRow(r)*100)/100]);
+  });
+  rows.push(["说明：只需填写前三列（人员名称必填、职级、工资），后两列由公式自动计算，导入时忽略"]);
+  downloadCsv("基础数据_人员工资与人天成本.csv", rows);
+  toast("已导出 "+rates.length+" 条基础数据，可用 Excel 编辑后导入");
+}
+/* 批量导入：以「人员名称」为主键，已存在则更新工资/职级，不存在则新增
+   兼容新表头（人员名称,职级,工资）与旧表头（职级,人员名称,工资） */
+function importRatesCsv(text){
+  var rows=parseCsvText(text);
+  if(rows.length<2){ toast("文件内容为空：请保留表头行并至少填写一行数据"); return; }
+  var iN=0, iL=1, iS=2, start=1;
+  /* 表头探测：前 5 行内找到含「人员」或「职级」的行即视为表头，并按位置识别列 */
+  for(var h=0;h<Math.min(rows.length,5);h++){
+    var cells=(rows[h]||[]).map(function(c){ return String(c==null?"":c); });
+    var isHead=cells.some(function(c){ return c.indexOf("人员")>=0 || c.indexOf("职级")>=0; });
+    if(!isHead) continue;
+    for(var c=0;c<cells.length;c++){
+      if(cells[c].indexOf("人员")>=0 && cells[c].indexOf("人天")<0) iN=c;
+      else if(cells[c].indexOf("职级")>=0) iL=c;
+      else if(cells[c].indexOf("工资")>=0) iS=c;
+    }
+    start=h+1; break;
+  }
+  var upd=0, add=0, skip=0, seen={};
+  for(var i=start;i<rows.length;i++){
+    var r=rows[i]||[];
+    var nm=String(r[iN]==null?"":r[iN]).trim();
+    var lv=String(r[iL]==null?"":r[iL]).trim();
+    var salRaw=String(r[iS]==null?"":r[iS]).trim();
+    /* 人员名称为必填项：空名或说明行跳过 */
+    if(!nm || nm.indexOf("说明")===0 || salRaw===""){ skip++; continue; }
+    var sal=numOf(salRaw);
+    if(!isFinite(sal) || sal<0) sal=0;
+    if(sal>1000000) sal=1000000;
+    var key=nm.toLowerCase();
+    if(seen[key]){ skip++; continue; }   /* 文件内同名只取第一条 */
+    seen[key]=1;
+    var hit=rateRowOfPerson(nm);
+    if(hit){
+      hit.salary=sal;
+      if(lv) hit.level=lv;
+      upd++;
+    }else{
+      rates.push({level:lv||((rates[0]&&rates[0].level)||"P1"), name:nm, salary:sal});
+      add++;
+    }
+  }
+  if(!upd && !add){ toast("未识别到有效数据：需要人员名称、职级、工资三列（人员名称不能为空）"); return; }
+  ensureRateNames();
+  save(LS.rates,rates);
+  drawRateRows();
+  toast("批量导入完成：更新 "+upd+" 条、新增 "+add+" 条"+(skip?("、跳过 "+skip+" 条"):""));
+}
+function renderRates(){
+  /* 双保险：非管理员即使手动改 hash 也进不来 */
+  if(!isAdmin()){ location.hash="#/dashboard"; toast("基础数据仅管理员可见"); return; }
+  content.innerHTML =
+    '<div class="card"><div class="section-head"><h3><span class="bar"></span>人员工资与人天成本（基础数据）</h3>'+
+      '<span style="display:inline-flex;gap:8px;flex-wrap:wrap">'+
+        '<button class="btn-sm btn-ghost" id="expRateBtn" title="导出全部基础数据，可用 Excel 批量编辑后另存为 CSV 再导入">⬇ 批量导出</button>'+
+        '<button class="btn-sm btn-ghost" id="impRateBtn" title="按「人员名称」匹配：已存在则更新工资与职级，不存在则新增，不会删除现有数据">⬆ 批量导入</button>'+
+        '<input type="file" id="impRateFile" accept=".csv,text/csv" style="display:none">'+
+        '<button class="btn-sm btn-main" id="addRateRow">＋ 添加职级/人员</button>'+
+      '</span>'+
+    '</div>'+
+    '<div style="overflow-x:auto"><table class="tbl"><thead><tr>'+
+    '<th>人员名称 <span style="color:var(--red)">*</span></th><th>职级</th><th class="num">工资（元/月）</th>'+
+    '<th class="num">社保公积金（元/月）</th><th class="num">人天成本（元/天）</th><th>操作</th>'+
+    '</tr></thead><tbody id="rateBody"></tbody></table></div>'+
+    '<div style="font-size:12px;color:var(--muted);margin-top:10px">'+
+    '公式口径（自动计算，无需手填）：<b>社保公积金 = 工资 × 0.249 + 120</b>；<b>人天成本 = (工资 + 社保公积金) ÷ 21.75 ÷ 0.85</b>。'+
+    '人天成本用于项目页工时金额与利润测算，修改工资后自动生效。</div>'+
+    '<div style="font-size:12px;color:var(--muted);margin-top:6px">'+
+    '人员名称是<b>必填项</b>，项目页「添加人员」时按名称选择，职级随之带出，因此名称不可重复；留空会自动补一个默认名，请按实际情况修改。'+
+    '同一职级可录入多名人员，人天成本取该职级第一条。</div>'+
+    '<div style="font-size:12px;color:var(--muted);margin-top:6px">'+
+    '批量操作：点「⬇ 批量导出」得到 CSV，用 Excel 一次改多人后另存为 CSV，再点「⬆ 批量导入」；'+
+    '导入格式为第 1 列人员名称、第 2 列职级、第 3 列工资（新版顺序），也兼容旧版「职级、人员名称、工资」，后两列自动计算无需填写。</div>'+
+    '</div>';
+  drawRateRows();
+  $("addRateRow").onclick=function(){
+    var lv=(rates[0]&&rates[0].level)||"P1";
+    rates.push({level:lv, name:nextPersonName(), salary:0});
+    save(LS.rates,rates); drawRateRows();
+    toast("已新增一行，请把默认名改成实际人员名称并填写工资");
+  };
+  $("expRateBtn").onclick=exportRatesCsv;
+  $("impRateBtn").onclick=function(){ $("impRateFile").value=""; $("impRateFile").click(); };
+  $("impRateFile").onchange=function(){
+    var f=$("impRateFile").files&&$("impRateFile").files[0]; if(!f) return;
+    readCsvFile(f, function(text){ importRatesCsv(text); });
+  };
+}
+function drawRateRows(){
+  $("rateBody").innerHTML = rates.map(function(r,i){
+    var noName=!String(r.name||"").trim();
+    var border=noName? "var(--red)" : "var(--border)";
+    var bg=noName? ";background:#fff5f5" : "";
+    return '<tr>'+
+      '<td><input class="rt-name" data-ri="'+i+'" value="'+esc(r.name||"")+'" placeholder="必填，如 张三" '+
+        'style="width:130px;padding:6px 8px;border:1px solid '+border+';border-radius:6px'+bg+'"></td>'+
+      '<td><input class="rt-level" data-ri="'+i+'" value="'+esc(r.level)+'" placeholder="如 P5" style="width:70px;padding:6px 8px;border:1px solid var(--border);border-radius:6px"></td>'+
+      '<td class="num"><input type="number" class="rt-salary" data-ri="'+i+'" value="'+(r.salary||0)+'" style="width:110px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;text-align:right"></td>'+
+      '<td class="num rt-soc" data-ri="'+i+'">'+fmtN(socOf(r),1)+'</td>'+
+      '<td class="num" style="font-weight:bold;color:var(--primary)"><span class="rt-cost" data-ri="'+i+'">'+fmtN(costOfRow(r),1)+'</span></td>'+
+      '<td><button class="link-btn rate-del" data-ri="'+i+'" style="color:var(--red)">删除</button></td>'+
+    '</tr>';
+  }).join("");
+  Array.prototype.forEach.call(content.querySelectorAll(".rt-level"),function(el){
+    el.oninput=function(){ var i=Number(el.getAttribute("data-ri")); rates[i].level=el.value.trim(); save(LS.rates,rates); };
+  });
+  Array.prototype.forEach.call(content.querySelectorAll(".rt-name"),function(el){
+    el.oninput=function(){
+      var i=Number(el.getAttribute("data-ri"));
+      rates[i].name=el.value.trim();
+      el.style.borderColor=el.value.trim()? "var(--border)" : "var(--red)";
+      el.style.background=el.value.trim()? "" : "#fff5f5";
+      save(LS.rates,rates);
+    };
+    el.onblur=function(){
+      var i=Number(el.getAttribute("data-ri")), r=rates[i];
+      var nm=String(r.name||"").trim();
+      if(!nm){
+        r.name=nameForPerson(r,i); save(LS.rates,rates); drawRateRows();
+        toast("人员名称不能为空，已自动填为「"+r.name+"」，请修改为实际姓名");
+        return;
+      }
+      /* 同名会导致按姓名取职级时串号，检查并提示 */
+      var dup=0;
+      rates.forEach(function(x){ if(String(x.name||"").trim().toLowerCase()===nm.toLowerCase()) dup++; });
+      if(dup>1) toast("人员名称「"+nm+"」重复，请改为不同的姓名（同名会取第一条的职级）");
+    };
+  });
+  Array.prototype.forEach.call(content.querySelectorAll(".rt-salary"),function(el){
+    el.oninput=function(){
+      var i=Number(el.getAttribute("data-ri"));
+      rates[i].salary=Number(el.value||0);
+      var tr=el.closest("tr");
+      tr.querySelector(".rt-soc").textContent=fmtN(socOf(rates[i]),1);
+      tr.querySelector(".rt-cost").textContent=fmtN(costOfRow(rates[i]),1);
+      save(LS.rates,rates);
+    };
+  });
+  Array.prototype.forEach.call(content.querySelectorAll(".rate-del"),function(el){
+    el.onclick=function(){
+      var i=Number(el.getAttribute("data-ri")), r=rates[i];
+      if(confirm("确定删除人员 "+(r.name||"(未填写)")+"（"+(r.level||"未设职级")+"）？删除后其工时行将取不到人天成本。")){
+        rates.splice(i,1); save(LS.rates,rates); drawRateRows();
+      }
+    };
+  });
+}
+/* 为空的人员名称生成一个不与现有重名的默认名 */
+function nameForPerson(r, idx){
+  var used={};
+  rates.forEach(function(x){
+    if(x===r) return;
+    var n=String(x.name||"").trim();
+    if(n) used[n.toLowerCase()]=1;
+  });
+  var base=RATE_NAME_FALLBACK[r&&r.level] || ("待补充"+((idx||0)+1));
+  var nm=base, k=1;
+  while(used[nm.toLowerCase()]){ k++; nm=base+k; }
+  return nm;
+}
+
+/* ---------- 修改密码 ---------- */
+function openPwdModal(){
+  openModal("修改密码",
+    '<div class="fitem"><label>原密码</label><input id="po" type="password"></div>'+
+    '<div class="fitem"><label>新密码（≥6位）</label><input id="pn1" type="password"></div>'+
+    '<div class="fitem"><label>确认新密码</label><input id="pn2" type="password"></div>',
+    '<button class="btn-sm btn-ghost" id="mCancel">取消</button><button class="btn-sm btn-main" id="mOk">保存</button>',
+    function(){
+      var me=users.filter(function(u){return u.u===session.u;})[0];
+      if($("po").value!==me.pwd){ toast("原密码错误"); return false; }
+      var n=$("pn1").value;
+      if(n.length<6){ toast("新密码至少6位"); return false; }
+      if(n!==$("pn2").value){ toast("两次输入不一致"); return false; }
+      me.pwd=n; save(LS.users,users); toast("密码修改成功"); return true;
+    });
+}
+
+/* ---------- 弹窗 ---------- */
+function openModal(title, bodyHtml, actsHtml, onOk){
+  $("modalRoot").innerHTML='<div class="mask"><div class="modal"><h3>'+esc(title)+'</h3>'+bodyHtml+
+    '<div class="acts">'+actsHtml+'</div></div></div>';
+  $("mCancel").onclick=closeModal;
+  $("mOk").onclick=function(){ if(onOk()!==false) closeModal(); };
+  var mask=$("modalRoot").querySelector(".mask");
+  mask.onclick=function(e){ if(e.target===mask) closeModal(); };
+}
+function closeModal(){ $("modalRoot").innerHTML=""; }
+
+/* ---------- 备份 ---------- */
+function exportData(){
+  var data={exportedAt:new Date().toISOString(), users:users, projects:projects, rates:rates};
+  var blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="项目预算工作台备份_"+new Date().toISOString().slice(0,10)+".json";
+  a.click(); toast("备份已导出");
+}
+$("importFile").addEventListener("change",function(e){
+  var f=e.target.files[0]; if(!f) return;
+  var rd=new FileReader();
+  rd.onload=function(){
+    try{
+      var d=JSON.parse(rd.result);
+      if(!d.projects||!d.users) throw 0;
+      if(!confirm("导入将覆盖当前全部数据（用户/项目/单价卡），确定继续？")) return;
+      users=d.users; projects=d.projects; rates=d.rates||rates;
+      ensureRateNames();
+      save(LS.users,users); save(LS.projects,projects); save(LS.rates,rates);
+      toast("数据导入成功"); location.hash="#/dashboard"; route();
+    }catch(err){ toast("文件格式不正确，导入失败"); }
+  };
+  rd.readAsText(f); e.target.value="";
+});
+
+/* ---------- 侧栏（移动端） ---------- */
+function closeSidebar(){ var s=$("sidebar"); s.classList.remove("open"); var m=$("sideMask"); if(m) m.remove(); }
+$("burger").onclick=function(){
+  var s=$("sidebar");
+  if(s.classList.contains("open")){ closeSidebar(); }
+  else{ s.classList.add("open"); var m=document.createElement("div"); m.id="sideMask"; m.onclick=closeSidebar; document.body.appendChild(m); }
+};
+
+/* ---------- 启动 ---------- */
+initStore();
+window.addEventListener("hashchange",route);
+$("loginBtn").onclick=doLogin;
+$("loginPwd").addEventListener("keydown",function(e){ if(e.key==="Enter") doLogin(); });
+$("loginUser").addEventListener("keydown",function(e){ if(e.key==="Enter") $("loginPwd").focus(); });
+$("pwdBtn").onclick=openPwdModal;
+if(restore()){ boot(); } else { showLogin(); }
+function boot(){ renderShell(); route(); }
+if($("loginVer")) $("loginVer").textContent = "v"+APP_VERSION+"　·　本地数据存储（localStorage），不上传服务器";
+</script>
+</body>
+</html>
